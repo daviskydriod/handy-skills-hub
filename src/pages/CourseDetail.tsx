@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Star, Clock, BookOpen, Users, PlayCircle, FileText, Award, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainLayout from "@/components/layout/MainLayout";
+import EnrollmentModal from "@/components/EnrollmentModal";
 import { courses } from "@/data/mockData";
 
 export default function CourseDetail() {
   const { id } = useParams();
   const course = courses.find((c) => c.id === id) || courses[0];
+  const [enrollOpen, setEnrollOpen] = useState(false);
 
   const curriculum = [
     { module: "Module 1: Introduction", lessons: ["Welcome & Course Overview", "Setting Up Your Environment", "Understanding the Basics"] },
@@ -61,7 +64,7 @@ export default function CourseDetail() {
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
                   {["Core fundamentals and theory", "Hands-on practical skills", "Industry best practices", "Portfolio-ready projects", "Professional workflows", "Real-world applications"].map((item) => (
                     <li key={item} className="flex items-start gap-2">
-                      <CheckCircle size={14} className="text-success mt-0.5 shrink-0" />
+                      <CheckCircle size={14} className="text-accent mt-0.5 shrink-0" />
                       {item}
                     </li>
                   ))}
@@ -107,7 +110,7 @@ export default function CourseDetail() {
             <div className="bg-card border border-border rounded-lg p-6 sticky top-20">
               <img src={course.image} alt="" className="w-full rounded-lg mb-4 aspect-video object-cover" />
               <p className="font-heading font-bold text-2xl text-foreground mb-4">₦{course.price.toLocaleString()}</p>
-              <Button className="w-full gradient-accent text-accent-foreground border-0 mb-3" size="lg">
+              <Button className="w-full gradient-accent text-accent-foreground border-0 mb-3" size="lg" onClick={() => setEnrollOpen(true)}>
                 Enroll Now
               </Button>
               <Button variant="outline" className="w-full" size="lg" asChild>
@@ -131,6 +134,8 @@ export default function CourseDetail() {
           </div>
         </div>
       </section>
+
+      <EnrollmentModal open={enrollOpen} onOpenChange={setEnrollOpen} course={course} />
     </MainLayout>
   );
 }

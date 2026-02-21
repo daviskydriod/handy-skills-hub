@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { LayoutDashboard, BookOpen, PlusCircle, Users, DollarSign, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import QuickAddCourseModal from "@/components/QuickAddCourseModal";
 import { dashboardStats, courses } from "@/data/mockData";
 
 const sidebarItems = [
@@ -13,10 +16,16 @@ const sidebarItems = [
 
 export default function InstructorDashboard() {
   const stats = dashboardStats.instructor;
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
     <DashboardLayout items={sidebarItems} title="Instructor Portal" userName="Adebayo Tunde">
-      <h1 className="font-heading font-bold text-xl md:text-2xl mb-6 text-foreground">Instructor Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-heading font-bold text-xl md:text-2xl text-foreground">Instructor Dashboard</h1>
+        <Button onClick={() => setQuickAddOpen(true)} className="gradient-accent text-accent-foreground border-0" size="sm">
+          <PlusCircle size={16} className="mr-1" /> Quick Add Course
+        </Button>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
@@ -55,6 +64,8 @@ export default function InstructorDashboard() {
           </tbody>
         </table>
       </div>
+
+      <QuickAddCourseModal open={quickAddOpen} onOpenChange={setQuickAddOpen} />
     </DashboardLayout>
   );
 }

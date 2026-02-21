@@ -1,5 +1,6 @@
 import { LayoutDashboard, BookOpen, Search, Award, User, Settings } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import AnalyticsWidget from "@/components/AnalyticsWidget";
 import { dashboardStats, courses } from "@/data/mockData";
 
 const sidebarItems = [
@@ -23,17 +24,19 @@ export default function StudentDashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Courses Enrolled", value: stats.coursesEnrolled, color: "bg-accent/10 text-accent" },
-          { label: "Completed", value: stats.completed, color: "bg-success/10 text-success" },
-          { label: "Certificates", value: stats.certificates, color: "bg-warning/10 text-warning" },
-          { label: "Hours Learned", value: stats.hoursLearned, color: "bg-primary/10 text-primary" },
+          { label: "Courses Enrolled", value: stats.coursesEnrolled, color: "text-accent" },
+          { label: "Completed", value: stats.completed, color: "text-accent" },
+          { label: "Certificates", value: stats.certificates, color: "text-accent" },
+          { label: "Hours Learned", value: stats.hoursLearned, color: "text-accent" },
         ].map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
-            <p className={`font-heading font-bold text-2xl ${s.color.split(" ")[1]}`}>{s.value}</p>
+            <p className={`font-heading font-bold text-2xl ${s.color}`}>{s.value}</p>
           </div>
         ))}
       </div>
+
+      <AnalyticsWidget />
 
       <h2 className="font-heading font-semibold text-lg mb-4 text-foreground">Recently Accessed</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
