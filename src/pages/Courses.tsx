@@ -20,7 +20,7 @@ export default function Courses() {
         <div className="container text-center">
           <h1 className="font-heading font-bold text-3xl md:text-4xl mb-3 text-foreground">Our Courses</h1>
           <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
-            Discover practical, hands-on courses designed to help you build real skills and earn a living.
+            Discover practical, hands-on courses designed to help you build real skills and earn a living. All prices in Nigerian Naira (₦). Flexible payment plans available.
           </p>
         </div>
       </section>

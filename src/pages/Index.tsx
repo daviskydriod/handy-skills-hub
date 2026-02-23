@@ -1,19 +1,21 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Star, Users, BookOpen, Award, CheckCircle, Palette, Globe, Plane, Scissors, PaintBucket, PartyPopper, UtensilsCrossed, Lightbulb, ArrowRight, Mail } from "lucide-react";
+import { Star, Users, BookOpen, Award, CheckCircle, Monitor, Brain, Share2, Palette, Globe, Home, TrendingUp, Code, FileText, Briefcase, Heart, ArrowRight, Mail, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import MainLayout from "@/components/layout/MainLayout";
 import CourseCard from "@/components/CourseCard";
 import TestimonialCard from "@/components/TestimonialCard";
-import { courses, testimonials, categories, partnerLogos } from "@/data/mockData";
+import { courses, testimonials, categories, partnerLogos, BUSINESS_INFO } from "@/data/mockData";
 import heroImage from "@/assets/hero-image.jpg";
 
-const iconMap: Record<string, any> = { Palette, Globe, Plane, Scissors, PaintBucket, PartyPopper, UtensilsCrossed, Lightbulb };
+const iconMap: Record<string, any> = { Monitor, Brain, Share2, Palette, Globe, Home, Users, TrendingUp, Code, FileText, Briefcase, Heart };
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
   visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.5 } }),
 };
+
+const whatsappEnroll = `https://wa.me/${BUSINESS_INFO.whatsapp}?text=${encodeURIComponent("Hello HandyGidi Training Centre! I'm interested in enrolling for a course. Please send me more details.")}`;
 
 const Index = () => {
   return (
@@ -30,25 +32,33 @@ const Index = () => {
               Unlock Your Future<br />
               <span className="text-gradient">With Your Hands.</span>
             </motion.h1>
-            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto lg:mx-0 mb-6">
-              Learn It. Master It. Earn From It. Join thousands of students gaining real-world skills through our hands-on training programs.
+            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto lg:mx-0 mb-2">
+              Learn It. Master It. Earn From It.
+            </motion.p>
+            <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-xs md:text-sm max-w-lg mx-auto lg:mx-0 mb-6">
+              {BUSINESS_INFO.tagline}. Join hundreds of students gaining real-world digital, business, and leadership skills through our hands-on training programs in Lugbe, Abuja.
             </motion.p>
             <motion.div variants={fadeUp} custom={2} className="flex flex-wrap justify-center lg:justify-start gap-3 mb-8">
               <Button size="lg" className="gradient-accent text-accent-foreground border-0 font-semibold" asChild>
-                <Link to="/register">Start Learning – FREE</Link>
+                <Link to="/register">Start Learning Today</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link to="/courses">Browse All Courses</Link>
               </Button>
+              <Button size="lg" variant="outline" className="border-green-500 text-green-600 hover:bg-green-50" asChild>
+                <a href={whatsappEnroll} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle size={18} className="mr-1" /> WhatsApp Us
+                </a>
+              </Button>
             </motion.div>
             <motion.div variants={fadeUp} custom={3} className="flex flex-wrap justify-center lg:justify-start gap-4">
               {[
-                { icon: Users, label: "500+ Students", color: "text-accent" },
-                { icon: Star, label: "4.8/5 Rating", color: "text-accent" },
-                { icon: BookOpen, label: "30+ Courses", color: "text-accent" },
+                { icon: Users, label: "500+ Students" },
+                { icon: Star, label: "4.8/5 Rating" },
+                { icon: BookOpen, label: "14+ Courses" },
               ].map((s) => (
                 <div key={s.label} className="flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2 text-xs font-medium shadow-sm">
-                  <s.icon size={14} className={s.color} />
+                  <s.icon size={14} className="text-accent" />
                   <span className="text-card-foreground">{s.label}</span>
                 </div>
               ))}
@@ -60,7 +70,7 @@ const Index = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <img src={heroImage} alt="Student training" className="rounded-2xl shadow-2xl w-full" />
+            <img src={heroImage} alt="Students training at HandyGidi Training Centre Abuja" className="rounded-2xl shadow-2xl w-full" />
           </motion.div>
         </div>
       </section>
@@ -68,7 +78,7 @@ const Index = () => {
       {/* Partners */}
       <section className="border-b border-border py-8">
         <div className="container">
-          <p className="text-center text-xs text-muted-foreground mb-4">Trusted by teams and learners</p>
+          <p className="text-center text-xs text-muted-foreground mb-4">Tools & Platforms We Train With</p>
           <div className="flex flex-wrap justify-center gap-6 md:gap-10 opacity-40">
             {partnerLogos.map((p) => (
               <span key={p} className="font-heading font-bold text-lg md:text-xl text-foreground">{p}</span>
@@ -107,23 +117,43 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Upcoming Courses */}
+      {/* Popular Courses */}
       <section className="py-12 md:py-20 bg-secondary/50">
         <div className="container">
           <p className="text-accent font-semibold text-xs uppercase tracking-wider mb-2">Popular Now</p>
           <div className="flex items-end justify-between mb-8">
-            <h2 className="font-heading font-bold text-2xl md:text-3xl text-foreground">Upcoming Courses</h2>
+            <h2 className="font-heading font-bold text-2xl md:text-3xl text-foreground">Our Courses</h2>
             <Link to="/courses" className="text-accent text-sm font-medium hidden sm:flex items-center gap-1 hover:underline">
               View All <ArrowRight size={14} />
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.slice(0, 3).map((c) => (
+            {courses.slice(0, 6).map((c) => (
               <CourseCard key={c.id} {...c} />
             ))}
           </div>
-          <div className="mt-6 text-center sm:hidden">
+          <div className="mt-6 text-center">
             <Button variant="outline" asChild><Link to="/courses">View All Courses</Link></Button>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA - Enroll Now */}
+      <section className="gradient-primary py-12 md:py-16">
+        <div className="container text-center text-primary-foreground max-w-2xl mx-auto">
+          <h2 className="font-heading font-bold text-2xl md:text-3xl mb-3">Ready to Start Your Journey?</h2>
+          <p className="text-sm md:text-base opacity-80 mb-6">
+            Don't wait for tomorrow. Enroll now and take the first step toward building valuable skills that lead to real income. Flexible payment plans available!
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button size="lg" className="gradient-accent text-accent-foreground border-0 font-semibold" asChild>
+              <Link to="/register">Register Now – It's Easy</Link>
+            </Button>
+            <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" asChild>
+              <a href={whatsappEnroll} target="_blank" rel="noopener noreferrer">
+                <MessageCircle size={18} className="mr-1" /> Enroll via WhatsApp
+              </a>
+            </Button>
           </div>
         </div>
       </section>
@@ -135,10 +165,10 @@ const Index = () => {
           <h2 className="font-heading font-bold text-2xl md:text-3xl text-center mb-10 text-foreground">Why Trust HandyGidi?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: CheckCircle, title: "Tailored Learning", desc: "Personalized paths based on your goals and pace." },
-              { icon: Award, title: "Expert Instructors", desc: "Learn from certified professionals with real experience." },
-              { icon: Users, title: "Support for Success", desc: "Mentorship and community to help you thrive." },
-              { icon: BookOpen, title: "Flexible Learning", desc: "Study at your own pace, online or in-person." },
+              { icon: CheckCircle, title: "Hands-On Training", desc: "Learn by doing — every class includes real-world projects and practical exercises." },
+              { icon: Award, title: "Expert Instructors", desc: "Learn from certified professionals with real industry experience." },
+              { icon: Users, title: "Small Class Sizes", desc: "Personalized attention and mentorship to help you succeed." },
+              { icon: BookOpen, title: "Flexible Payment", desc: "Affordable fees with flexible payment plans to suit your budget." },
             ].map((item, i) => (
               <motion.div
                 key={item.title}
@@ -164,10 +194,10 @@ const Index = () => {
       <section className="gradient-primary py-10 md:py-14">
         <div className="container grid grid-cols-2 md:grid-cols-4 gap-6 text-center text-primary-foreground">
           {[
-            { value: "8+", label: "Years of Experience" },
+            { value: "5+", label: "Years of Experience" },
             { value: "500+", label: "Students Trained" },
-            { value: "30+", label: "Courses Available" },
-            { value: "3", label: "Locations" },
+            { value: "14+", label: "Courses Available" },
+            { value: "1", label: "Location (Lugbe, Abuja)" },
           ].map((s) => (
             <div key={s.label}>
               <p className="font-heading font-extrabold text-3xl md:text-4xl mb-1">{s.value}</p>
