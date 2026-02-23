@@ -876,67 +876,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          FINAL ENROLL CTA
-      ══════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 bg-slate-50">
-        <div className="container text-center max-w-2xl mx-auto">
-          <SectionLabel>Ready to Begin?</SectionLabel>
-          <h2
-            className="font-heading font-extrabold mb-4"
-            style={{ fontSize: "clamp(1.8rem,4vw,2.8rem)", color: NAVY }}
-          >
-            Ready to Start Your Journey?
-          </h2>
-          <p className="text-slate-500 text-base mb-9 leading-relaxed">
-            Don't wait for tomorrow. Enroll now and take the first step toward
-            building valuable skills that lead to real income.{" "}
-            <strong className="text-slate-700">Flexible payment plans available!</strong>
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 font-extrabold px-8 py-3.5 rounded-full text-sm transition-all hover:scale-105"
-              style={{
-                background: `linear-gradient(135deg,${GOLD},${GOLD2})`,
-                color: "#060d1c",
-                boxShadow: `0 8px 32px rgba(234,179,8,0.3)`,
-              }}
-            >
-              <Zap size={15} /> Register Now – It's Easy
-            </Link>
-            <a
-              href={whatsappEnroll}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 font-semibold px-8 py-3.5 rounded-full text-sm border-2 transition-all hover:bg-green-50"
-              style={{ borderColor: "#22c55e", color: "#16a34a" }}
-            >
-              <MessageCircle size={15} /> Enroll via WhatsApp
-            </a>
-          </div>
-          {/* contact quick info */}
-          <p className="text-xs text-slate-400 mt-6">
-            Call / WhatsApp:{" "}
-            <a
-              href={`tel:${BUSINESS_INFO.phone}`}
-              className="font-semibold hover:underline"
-              style={{ color: GOLD2 }}
-            >
-              {BUSINESS_INFO.phone}
-            </a>
-            {" · "}
-            <a
-              href={`mailto:${BUSINESS_INFO.email}`}
-              className="font-semibold hover:underline"
-              style={{ color: GOLD2 }}
-            >
-              {BUSINESS_INFO.email}
-            </a>
-          </p>
-        </div>
-      </section>
-
+    
       {/* ══════════════════════════════════════════════════════
           SUBSCRIBE — on dark navy
       ══════════════════════════════════════════════════════ */}
