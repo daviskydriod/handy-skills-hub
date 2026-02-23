@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
+import logo from "@/assets/logo.jpeg";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -21,9 +22,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 glass border-b border-border/50">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-heading font-bold text-sm">HG</span>
-          </div>
+          <img src={logo} alt="HandyGidi Training Centre" className="w-10 h-10 rounded-lg object-contain" />
           <span className="font-heading font-bold text-lg text-foreground hidden sm:block">
             HandyGidi
           </span>
@@ -48,7 +47,7 @@ export default function Navbar() {
           <Button variant="ghost" size="sm" asChild>
             <Link to="/login">Login</Link>
           </Button>
-          <Button size="sm" className="gradient-accent text-accent-foreground border-0" asChild>
+          <Button size="sm" className="gradient-accent text-accent-foreground border-0 font-semibold" asChild>
             <Link to="/register">Register</Link>
           </Button>
         </div>
