@@ -33,37 +33,7 @@ export default function Navbar() {
         borderBottom: "1px solid rgba(234,179,8,0.12)",
       }}
     >
-      {/* ── top bar (desktop) ── */}
-      <div
-        className="hidden md:block border-b text-center py-1.5 text-xs font-medium"
-        style={{
-          borderColor: "rgba(234,179,8,0.1)",
-          background: "rgba(0,0,0,0.2)",
-          color: "#94a3b8",
-        }}
-      >
-        <span className="mr-6">
-          📞{" "}
-          <a
-            href={`tel:${BUSINESS_INFO.phone}`}
-            className="hover:underline transition-colors"
-            style={{ color: GOLD }}
-          >
-            {BUSINESS_INFO.phone}
-          </a>
-        </span>
-        <span>
-          ✉️{" "}
-          <a
-            href={`mailto:${BUSINESS_INFO.email}`}
-            className="hover:underline transition-colors"
-            style={{ color: GOLD }}
-          >
-            {BUSINESS_INFO.email}
-          </a>
-        </span>
-      </div>
-
+      
       {/* ── main nav row ── */}
       <div className="container flex h-16 items-center justify-between">
 
