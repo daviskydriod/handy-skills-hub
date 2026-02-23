@@ -302,15 +302,7 @@ export default function Index() {
             >
               <strong className="text-white">Learn It. Master It. Earn From It.</strong>
             </motion.p>
-            <motion.p
-              variants={fadeUp}
-              custom={2.5}
-              className="text-slate-400 text-sm max-w-md mx-auto lg:mx-0 mb-8 leading-relaxed flex items-start gap-1.5 justify-center lg:justify-start"
-            >
-              <MapPin size={13} className="shrink-0 mt-0.5" style={{ color: GOLD }} />
-              {BUSINESS_INFO.address}
-            </motion.p>
-
+    
             <motion.div
               variants={fadeUp}
               custom={3}
