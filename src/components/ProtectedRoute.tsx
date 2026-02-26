@@ -1,8 +1,4 @@
-// File: frontend/src/components/ProtectedRoute.tsx
-// Guards routes by auth status and optionally by user role.
-// Usage in App.tsx / router:
-//   <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
-//   <Route path="/admin"     element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+// File: src/components/ProtectedRoute.tsx
 
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -10,14 +6,14 @@ import type { User } from '../types';
 
 interface Props {
   children: React.ReactNode;
-  roles?: User['role'][];   // if provided, only these roles can access
+  roles?: User['role'][];
 }
 
 export default function ProtectedRoute({ children, roles }: Props) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // While we validate the stored token, show a spinner
+  // While validating stored token, show spinner
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -31,12 +27,11 @@ export default function ProtectedRoute({ children, roles }: Props) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Logged in but wrong role
+  // Logged in but wrong role — redirect to their correct dashboard
   if (roles && user && !roles.includes(user.role)) {
-    // Redirect to appropriate dashboard
-    if (user.role === 'admin')       return <Navigate to="/admin"      replace />;
-    if (user.role === 'instructor')  return <Navigate to="/instructor" replace />;
-    return <Navigate to="/dashboard" replace />;
+    if (user.role === 'admin')      return <Navigate to="/dashboard/admin"      replace />;
+    if (user.role === 'instructor') return <Navigate to="/dashboard/instructor" replace />;
+    return <Navigate to="/dashboard/student" replace />;
   }
 
   return <>{children}</>;
