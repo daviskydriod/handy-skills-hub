@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/components/layout/MainLayout';
 import EnrollmentModal from '@/components/EnrollmentModal';
 import { BUSINESS_INFO } from '@/data/mockData';   // business info only
-import { useCourse } from '../hooks/useCourse';
+import { useCourse } from '../hooks/useCourses';
 
 const NAVY = '#0b1f3a';
 const GOLD = '#EAB308';
