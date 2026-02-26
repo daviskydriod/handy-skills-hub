@@ -1,13 +1,11 @@
 // File: src/pages/dashboard/StudentDashboard.tsx
-// Full student dashboard — real enrolled courses, progress tracking, explore & enroll.
-// No mockData — all wired to flat PHP backend via API calls.
 
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   LayoutDashboard, BookOpen, Search, Award, User, Settings,
   Clock, CheckCircle, TrendingUp, Star, ArrowRight, RefreshCw,
-  Play, Lock,
+  Play,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { toast } from "@/hooks/use-toast";
@@ -15,9 +13,8 @@ import { useAuth } from "@/context/AuthContext";
 import { getMyEnrollments, enrollInCourse, type EnrolledCourse } from "@/api/enrollments";
 import { getCourses, type Course } from "@/api/courses";
 
-// ── Sidebar ────────────────────────────────────────────────────────────────────
 const sidebarItems = [
-  { label: "Dashboard",       to: "/dashboard",              icon: <LayoutDashboard size={18} /> },
+  { label: "Dashboard",       to: "/dashboard/student",      icon: <LayoutDashboard size={18} /> },
   { label: "My Courses",      to: "/dashboard/my-courses",   icon: <BookOpen size={18} /> },
   { label: "Explore Courses", to: "/dashboard/explore",      icon: <Search size={18} /> },
   { label: "Certificates",    to: "/dashboard/certificates", icon: <Award size={18} /> },
@@ -25,12 +22,10 @@ const sidebarItems = [
   { label: "Settings",        to: "/dashboard/settings",     icon: <Settings size={18} /> },
 ];
 
-// ── Skeleton loader ────────────────────────────────────────────────────────────
 const Skeleton = ({ h = "h-8", w = "w-full", rounded = "rounded-lg" }: { h?: string; w?: string; rounded?: string }) => (
   <div className={`${h} ${w} ${rounded} bg-border/60 animate-pulse`} />
 );
 
-// ── Progress ring ──────────────────────────────────────────────────────────────
 const ProgressRing = ({ pct, size = 44 }: { pct: number; size?: number }) => {
   const r = (size - 6) / 2;
   const circ = 2 * Math.PI * r;
@@ -44,22 +39,19 @@ const ProgressRing = ({ pct, size = 44 }: { pct: number; size?: number }) => {
   );
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
 export default function StudentDashboard() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
-  const [tab,           setTab]           = useState<"overview" | "my-courses" | "explore">("overview");
-  const [enrolled,      setEnrolled]      = useState<EnrolledCourse[]>([]);
-  const [explore,       setExplore]       = useState<Course[]>([]);
-  const [loadingEnrolled, setLE]          = useState(true);
-  const [loadingExplore,  setLX]          = useState(false);
-  const [enrollingId,   setEnrollingId]   = useState<number | null>(null);
-  const [exploreSearch, setExploreSearch] = useState("");
+  const [tab,             setTab]           = useState<"overview" | "my-courses" | "explore">("overview");
+  const [enrolled,        setEnrolled]      = useState<EnrolledCourse[]>([]);
+  const [explore,         setExplore]       = useState<Course[]>([]);
+  const [loadingEnrolled, setLE]            = useState(true);
+  const [loadingExplore,  setLX]            = useState(false);
+  const [enrollingId,     setEnrollingId]   = useState<number | null>(null);
+  const [exploreSearch,   setExploreSearch] = useState("");
 
-  // enrolled IDs set for quick lookup
   const enrolledIds = new Set(enrolled.map((c) => c.id));
 
-  // ── Fetch enrolled courses ──────────────────────────────────────────────────
   const fetchEnrolled = useCallback(async () => {
     setLE(true);
     try {
@@ -70,7 +62,6 @@ export default function StudentDashboard() {
     } finally { setLE(false); }
   }, []);
 
-  // ── Fetch explore courses ───────────────────────────────────────────────────
   const fetchExplore = useCallback(async () => {
     setLX(true);
     try {
@@ -81,12 +72,13 @@ export default function StudentDashboard() {
     } finally { setLX(false); }
   }, []);
 
+  // ✅ Wait for auth to be ready before fetching — avoids 401 on first load
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchEnrolled();
     fetchExplore();
-  }, [fetchEnrolled, fetchExplore]);
+  }, [isAuthenticated, fetchEnrolled, fetchExplore]);
 
-  // ── Enroll in a course ──────────────────────────────────────────────────────
   const handleEnroll = async (courseId: number, title: string) => {
     setEnrollingId(courseId);
     try {
@@ -98,20 +90,17 @@ export default function StudentDashboard() {
     } finally { setEnrollingId(null); }
   };
 
-  // ── Computed stats ──────────────────────────────────────────────────────────
   const completed   = enrolled.filter((c) => c.completed).length;
   const inProgress  = enrolled.filter((c) => !c.completed && c.progress > 0).length;
   const avgProgress = enrolled.length
     ? Math.round(enrolled.reduce((a, c) => a + c.progress, 0) / enrolled.length)
     : 0;
 
-  // ── Filtered explore ────────────────────────────────────────────────────────
   const filteredExplore = explore.filter((c) =>
     c.title.toLowerCase().includes(exploreSearch.toLowerCase()) ||
     c.category.toLowerCase().includes(exploreSearch.toLowerCase())
   );
 
-  // ══════════════════════════════════════════════════════════════════════════
   return (
     <DashboardLayout items={sidebarItems} title="Student Portal" userName={user?.name ?? "Student"}>
 
@@ -129,13 +118,13 @@ export default function StudentDashboard() {
         </button>
       </div>
 
-      {/* ── STAT CARDS ─────────────────────────────────────────────────────── */}
+      {/* STAT CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Enrolled",    value: enrolled.length,  icon: BookOpen,      color: "text-yellow-500" },
-          { label: "Completed",   value: completed,        icon: CheckCircle,   color: "text-emerald-500" },
-          { label: "In Progress", value: inProgress,       icon: TrendingUp,    color: "text-blue-500" },
-          { label: "Avg Progress",value: `${avgProgress}%`,icon: Award,         color: "text-purple-500" },
+          { label: "Enrolled",     value: enrolled.length,   icon: BookOpen,    color: "text-yellow-500" },
+          { label: "Completed",    value: completed,          icon: CheckCircle, color: "text-emerald-500" },
+          { label: "In Progress",  value: inProgress,         icon: TrendingUp,  color: "text-blue-500" },
+          { label: "Avg Progress", value: `${avgProgress}%`,  icon: Award,       color: "text-purple-500" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -147,7 +136,7 @@ export default function StudentDashboard() {
         ))}
       </div>
 
-      {/* ── TABS ───────────────────────────────────────────────────────────── */}
+      {/* TABS */}
       <div className="flex gap-1 mb-5 bg-secondary/50 rounded-xl p-1 w-fit">
         {(["overview", "my-courses", "explore"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
@@ -159,11 +148,9 @@ export default function StudentDashboard() {
         ))}
       </div>
 
-      {/* ══════════════ OVERVIEW TAB ══════════════ */}
+      {/* ── OVERVIEW ── */}
       {tab === "overview" && (
         <div className="space-y-6">
-
-          {/* Continue learning */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-heading font-semibold text-base text-foreground">Continue Learning</h2>
@@ -172,7 +159,6 @@ export default function StudentDashboard() {
                 View all <ArrowRight size={11} />
               </button>
             </div>
-
             {loadingEnrolled ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1,2,3].map(i => <Skeleton key={i} h="h-48" rounded="rounded-xl" />)}
@@ -207,8 +193,7 @@ export default function StudentDashboard() {
                       <p className="font-semibold text-sm text-foreground line-clamp-1 mb-1">{c.title}</p>
                       <p className="text-[11px] text-muted-foreground mb-2">by {c.instructor}</p>
                       <div className="w-full bg-secondary rounded-full h-1.5">
-                        <div className="gradient-accent h-1.5 rounded-full transition-all"
-                          style={{ width: `${c.progress}%` }} />
+                        <div className="gradient-accent h-1.5 rounded-full transition-all" style={{ width: `${c.progress}%` }} />
                       </div>
                       <p className="text-[10px] text-muted-foreground mt-1">{c.progress}% complete</p>
                     </div>
@@ -218,7 +203,6 @@ export default function StudentDashboard() {
             )}
           </div>
 
-          {/* Completed */}
           {enrolled.filter(c => c.completed).length > 0 && (
             <div>
               <h2 className="font-heading font-semibold text-base text-foreground mb-3">Completed Courses 🎉</h2>
@@ -238,7 +222,6 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Suggested courses (not enrolled) */}
           {explore.filter(c => !enrolledIds.has(c.id)).length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -252,8 +235,7 @@ export default function StudentDashboard() {
                 {explore.filter(c => !enrolledIds.has(c.id)).slice(0, 3).map((c) => (
                   <div key={c.id} className="bg-card border border-border rounded-xl overflow-hidden">
                     <div className="h-32 bg-secondary relative">
-                      <img src={c.image ?? "/placeholder-course.jpg"} alt={c.title}
-                        className="w-full h-full object-cover" />
+                      <img src={c.image ?? "/placeholder-course.jpg"} alt={c.title} className="w-full h-full object-cover" />
                       <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-black">
                         {c.category}
                       </span>
@@ -265,9 +247,7 @@ export default function StudentDashboard() {
                         <span className="font-bold text-sm text-foreground">
                           {c.price === 0 ? <span className="text-emerald-600">Free</span> : `₦${c.price.toLocaleString()}`}
                         </span>
-                        <button
-                          onClick={() => handleEnroll(c.id, c.title)}
-                          disabled={enrollingId === c.id}
+                        <button onClick={() => handleEnroll(c.id, c.title)} disabled={enrollingId === c.id}
                           className="text-[11px] font-bold px-3 py-1.5 rounded-full gradient-accent text-accent-foreground disabled:opacity-60">
                           {enrollingId === c.id ? "…" : "Enroll"}
                         </button>
@@ -281,7 +261,7 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* ══════════════ MY COURSES TAB ══════════════ */}
+      {/* ── MY COURSES ── */}
       {tab === "my-courses" && (
         <div>
           {loadingEnrolled ? (
@@ -299,11 +279,8 @@ export default function StudentDashboard() {
             <div className="space-y-3">
               {enrolled.map((c) => (
                 <div key={c.id} className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
-                  {/* Thumbnail */}
                   <img src={c.image ?? "/placeholder-course.jpg"} alt={c.title}
                     className="w-16 h-16 rounded-xl object-cover shrink-0 hidden sm:block" />
-
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <p className="font-semibold text-sm text-foreground line-clamp-1">{c.title}</p>
@@ -314,19 +291,14 @@ export default function StudentDashboard() {
                     </div>
                     <p className="text-[11px] text-muted-foreground mb-2">by {c.instructor} · {c.category}</p>
                     <div className="w-full bg-secondary rounded-full h-1.5">
-                      <div className="gradient-accent h-1.5 rounded-full transition-all"
-                        style={{ width: `${c.progress}%` }} />
+                      <div className="gradient-accent h-1.5 rounded-full transition-all" style={{ width: `${c.progress}%` }} />
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1">{c.progress}% complete</p>
                   </div>
-
-                  {/* Progress ring */}
                   <div className="relative shrink-0 hidden sm:flex items-center justify-center">
                     <ProgressRing pct={c.progress} />
                     <span className="absolute text-[10px] font-bold text-foreground">{c.progress}%</span>
                   </div>
-
-                  {/* Action */}
                   <Link to={`/courses/${c.id}`}
                     className="shrink-0 w-9 h-9 rounded-xl gradient-accent flex items-center justify-center text-accent-foreground hover:opacity-90 transition-opacity">
                     <Play size={14} className="ml-0.5" />
@@ -338,17 +310,15 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* ══════════════ EXPLORE TAB ══════════════ */}
+      {/* ── EXPLORE ── */}
       {tab === "explore" && (
         <div>
-          {/* Search bar */}
           <div className="relative mb-5">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={exploreSearch} onChange={(e) => setExploreSearch(e.target.value)}
               placeholder="Search courses by title or category…"
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-yellow-400 transition-colors" />
           </div>
-
           {loadingExplore ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1,2,3,4,5,6].map(i => <Skeleton key={i} h="h-52" rounded="rounded-xl" />)}
@@ -362,8 +332,7 @@ export default function StudentDashboard() {
                 return (
                   <div key={c.id} className="bg-card border border-border rounded-xl overflow-hidden flex flex-col">
                     <div className="relative h-36 bg-secondary shrink-0">
-                      <img src={c.image ?? "/placeholder-course.jpg"} alt={c.title}
-                        className="w-full h-full object-cover" />
+                      <img src={c.image ?? "/placeholder-course.jpg"} alt={c.title} className="w-full h-full object-cover" />
                       <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-black">
                         {c.category}
                       </span>
@@ -391,9 +360,7 @@ export default function StudentDashboard() {
                             <Play size={10} /> Continue
                           </Link>
                         ) : (
-                          <button
-                            onClick={() => handleEnroll(c.id, c.title)}
-                            disabled={enrollingId === c.id}
+                          <button onClick={() => handleEnroll(c.id, c.title)} disabled={enrollingId === c.id}
                             className="text-[11px] font-bold px-3 py-1.5 rounded-full gradient-accent text-accent-foreground disabled:opacity-60 transition-opacity">
                             {enrollingId === c.id ? "Enrolling…" : "Enroll Now"}
                           </button>
