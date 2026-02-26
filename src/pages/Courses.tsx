@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { BUSINESS_INFO } from '@/data/mockData';
-import { useCourses } from '../hooks/useCourse';        // ✅ named export from useCourse.ts
+import { useCourses } from '../hooks/useCourses';        // ✅ named export from useCourse.ts
 import type { Course } from '../api/courses';
 import type { CoursesFilter } from '../api/courses';
 
