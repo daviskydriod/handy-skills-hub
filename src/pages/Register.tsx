@@ -1,24 +1,46 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { MessageCircle } from "lucide-react";
-import { toast } from "sonner";
-import logo from "@/assets/logo.jpeg";
-import { BUSINESS_INFO } from "@/data/mockData";
+// File: frontend/src/pages/Register.tsx
+// Registration page — calls the real PHP API via AuthContext.
+
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import logo from '@/assets/logo.jpeg';
+import { useAuth } from '../context/AuthContext';
 
 export default function Register() {
-  const [role, setRole] = useState("student");
-  const [name, setName] = useState("");
+  const [name,      setName]      = useState('');
+  const [email,     setEmail]     = useState('');
+  const [password,  setPassword]  = useState('');
+  const [role,      setRole]      = useState<'student' | 'instructor'>('student');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { register } = useAuth();
   const navigate = useNavigate();
 
-  const whatsappEnroll = `https://wa.me/${BUSINESS_INFO.whatsapp}?text=${encodeURIComponent(`Hello HandyGidi! My name is ${name || "[Your Name]"}. I'd like to register as a ${role}. Please send me enrollment details.`)}`;
-
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user = { email: "new@handygidi.com", role, name: name || "New Student" };
-    localStorage.setItem("handygidi_user", JSON.stringify(user));
-    toast.success("Account created successfully! Welcome to HandyGidi.");
-    navigate("/dashboard");
+
+    if (!name || !email || !password) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await register(name, email, password, role);
+      toast.success('Account created! Welcome to HandyGidi 🎉');
+      navigate(role === 'instructor' ? '/instructor' : '/dashboard', { replace: true });
+    } catch (err: any) {
+      const msg = err.response?.data?.error ?? 'Registration failed — please try again';
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -28,51 +50,74 @@ export default function Register() {
           <img src={logo} alt="HandyGidi" className="w-10 h-10 rounded-lg object-contain" />
           <span className="font-heading font-bold text-lg text-foreground">HandyGidi</span>
         </Link>
-        <h1 className="font-heading font-bold text-xl text-center mb-1 text-foreground">Create Account</h1>
-        <p className="text-center text-sm text-muted-foreground mb-6">Start your learning journey today</p>
-        <form className="space-y-3" onSubmit={handleRegister}>
+
+        <h1 className="font-heading font-bold text-xl text-center mb-1 text-foreground">
+          Create Account
+        </h1>
+        <p className="text-center text-sm text-muted-foreground mb-6">
+          Start your learning journey today
+        </p>
+
+        <form className="space-y-4" onSubmit={handleRegister}>
           <input
-            placeholder="Full Name"
+            placeholder="Full name"
+            type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+            disabled={isLoading}
+            className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm
+                       text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50"
           />
-          <input placeholder="Email address" type="email" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50" />
-          <input placeholder="Phone number" type="tel" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50" />
-          <input placeholder="Password" type="password" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50" />
-          <input placeholder="Confirm Password" type="password" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50" />
-          <div>
-            <p className="text-xs text-muted-foreground mb-2">I am a:</p>
-            <div className="flex gap-2">
-              {["student", "instructor"].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize ${
-                    role === r ? "bg-accent text-accent-foreground border-accent" : "bg-background text-muted-foreground border-border"
+          <input
+            placeholder="Email address"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
+            className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm
+                       text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50"
+          />
+          <input
+            placeholder="Password (min 6 characters)"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
+            className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm
+                       text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50"
+          />
+
+          {/* Role selector */}
+          <div className="grid grid-cols-2 gap-2">
+            {(['student', 'instructor'] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                className={`py-2 rounded-lg border text-sm font-semibold transition-all capitalize
+                  ${role === r
+                    ? 'border-yellow-400 bg-yellow-400/10 text-yellow-700'
+                    : 'border-border text-muted-foreground hover:border-yellow-300'
                   }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
+              >
+                {r}
+              </button>
+            ))}
           </div>
-          <Button type="submit" className="w-full gradient-accent text-accent-foreground border-0" size="lg">
-            Create Account
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full gradient-accent text-accent-foreground border-0"
+            size="lg"
+          >
+            {isLoading ? 'Creating account…' : 'Create Account'}
           </Button>
         </form>
 
-        <div className="mt-4">
-          <Button variant="outline" className="w-full border-green-500 text-green-600 hover:bg-green-50 text-sm" asChild>
-            <a href={whatsappEnroll} target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={16} className="mr-2" /> Register via WhatsApp
-            </a>
-          </Button>
-        </div>
-
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Already have an account? <Link to="/login" className="text-accent font-medium hover:underline">Sign In</Link>
+          Already have an account?{' '}
+          <Link to="/login" className="text-accent font-medium hover:underline">Sign in</Link>
         </p>
       </div>
     </div>
