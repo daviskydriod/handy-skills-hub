@@ -1,6 +1,4 @@
 // File: frontend/src/pages/Register.tsx
-// Registration page — calls the real PHP API via AuthContext.
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -34,7 +32,8 @@ export default function Register() {
     try {
       await register(name, email, password, role);
       toast.success('Account created! Welcome to HandyGidi 🎉');
-      navigate(role === 'instructor' ? '/instructor' : '/dashboard', { replace: true });
+      // ✅ Paths match App.tsx route definitions exactly
+      navigate(role === 'instructor' ? '/dashboard/instructor' : '/dashboard/student', { replace: true });
     } catch (err: any) {
       const msg = err.response?.data?.error ?? 'Registration failed — please try again';
       toast.error(msg);
