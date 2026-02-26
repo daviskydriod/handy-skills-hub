@@ -79,6 +79,18 @@ export default function StudentDashboard() {
     fetchExplore();
   }, [isAuthenticated, fetchEnrolled, fetchExplore]);
 
+  // ✅ Re-fetch when user switches back to this browser tab — catches deleted/updated courses
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && isAuthenticated) {
+        fetchEnrolled();
+        fetchExplore();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [isAuthenticated, fetchEnrolled, fetchExplore]);
+
   const handleEnroll = async (courseId: number, title: string) => {
     setEnrollingId(courseId);
     try {
