@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { BUSINESS_INFO } from '@/data/mockData';   // keep only business info
-import { useCourses } from '../hooks/useCourse';
+import { useCourse } from '../hooks/useCourse';
 import type { Course, CoursesFilter } from '../types';
 
 /* ─── design tokens ────────────────────────────────────────── */
