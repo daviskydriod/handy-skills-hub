@@ -1,6 +1,4 @@
-// File: frontend/src/pages/Courses.tsx
-// Courses listing page — now fetches from https://api.handygiditrainingcentre.com/api/courses
-// Replaces the old static mockData import with the real useCourses hook.
+// File: src/pages/Courses.tsx
 
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
@@ -12,9 +10,10 @@ import {
   TrendingUp, Code, FileText, Briefcase, Heart,
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
-import { BUSINESS_INFO } from '@/data/mockData';   // keep only business info
-import { useCourse } from '../hooks/useCourse';
-import type { Course, CoursesFilter } from '../types';
+import { BUSINESS_INFO } from '@/data/mockData';
+import { useCourses } from '../hooks/useCourse';        // ✅ named export from useCourse.ts
+import type { Course } from '../api/courses';
+import type { CoursesFilter } from '../api/courses';
 
 /* ─── design tokens ────────────────────────────────────────── */
 const NAVY  = '#0b1f3a';
@@ -27,7 +26,6 @@ const iconMap: Record<string, any> = {
   TrendingUp, Code, FileText, Briefcase, Heart,
 };
 
-/* ─── card animation ───────────────────────────────────────── */
 const cardVariants = {
   hidden:  { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
@@ -112,18 +110,16 @@ export default function Courses() {
   const [sort,        setSort]        = useState<CoursesFilter['sort']>('default');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Real API call — updates whenever filter changes
   const filter: CoursesFilter = useMemo(
     () => ({ category: category || undefined, search: search || undefined, sort }),
     [category, search, sort]
   );
 
-  const { courses, total, isLoading, error } = useCourses(filter);
+  const { courses, total, isLoading, error } = useCourses(filter); // ✅ correct
 
   const clearFilters = useCallback(() => { setCategory(''); setSearch(''); setSort('default'); }, []);
   const hasActive    = !!category || !!search || sort !== 'default';
 
-  // Categories derived from courses (or fetch separately)
   const derivedCategories = useMemo(() => {
     const seen = new Set<string>();
     return courses.filter((c) => {
@@ -160,7 +156,6 @@ export default function Courses() {
 
             {/* SIDEBAR */}
             <aside className="hidden lg:flex flex-col gap-6 w-64 shrink-0 sticky top-24">
-              {/* Search */}
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
                 <h3 className="font-heading font-extrabold text-sm mb-3" style={{ color: NAVY }}>Search</h3>
                 <div className="relative">
@@ -180,7 +175,6 @@ export default function Courses() {
                 </div>
               </div>
 
-              {/* Categories */}
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
                 <h3 className="font-heading font-extrabold text-sm mb-4" style={{ color: NAVY }}>Categories</h3>
                 <ul className="flex flex-col gap-1">
@@ -211,7 +205,6 @@ export default function Courses() {
                 </ul>
               </div>
 
-              {/* Sort */}
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
                 <h3 className="font-heading font-extrabold text-sm mb-3" style={{ color: NAVY }}>Sort By</h3>
                 {([
@@ -260,7 +253,6 @@ export default function Courses() {
                 </div>
               </div>
 
-              {/* Loading skeleton */}
               {isLoading && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -269,14 +261,12 @@ export default function Courses() {
                 </div>
               )}
 
-              {/* Error state */}
               {error && !isLoading && (
                 <div className="text-center py-20 bg-white rounded-2xl border border-slate-100">
                   <p className="text-red-500 font-semibold">{error}</p>
                 </div>
               )}
 
-              {/* Course cards */}
               {!isLoading && !error && (
                 <AnimatePresence mode="popLayout">
                   {courses.length > 0 ? (
