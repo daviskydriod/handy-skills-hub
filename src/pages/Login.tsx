@@ -1,7 +1,4 @@
 // File: frontend/src/pages/Login.tsx
-// Login page — calls the real PHP API via AuthContext.
-// Replaces the DUMMY_USERS approach entirely.
-
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,17 +11,18 @@ export default function Login() {
   const [password,  setPassword]  = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
 
   // After login, go back to where the user came from or their dashboard
   const from = (location.state as any)?.from?.pathname ?? null;
 
+  // ✅ These paths must match your App.tsx route definitions exactly
   const getDefaultPath = (role: string) => {
-    if (role === 'admin')      return '/admin';
-    if (role === 'instructor') return '/instructor';
-    return '/dashboard';
+    if (role === 'admin')      return '/dashboard/admin';
+    if (role === 'instructor') return '/dashboard/instructor';
+    return '/dashboard/student';
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -38,10 +36,11 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login(email, password);
-      // user is now set in context — read the role from auth context
-      // We re-read from localStorage because state may not update synchronously
+
+      // Read role from localStorage (context state may not update synchronously)
       const stored = localStorage.getItem('hg_user');
       const role   = stored ? JSON.parse(stored).role : 'student';
+
       toast.success('Welcome back!');
       navigate(from ?? getDefaultPath(role), { replace: true });
     } catch (err: any) {
