@@ -344,11 +344,9 @@ export default function InstructorDashboard() {
       {/* ══════════ SIDEBAR ══════════ */}
       <aside className="sidebar" style={{ width: SW, background: "#fff", borderRight: "1px solid #e8edf2", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", zIndex: 40 }}>
         {/* Logo */}
-        <div style={{ padding: sidebarOpen ? "18px 16px 14px" : "18px 0 14px", display: "flex", alignItems: "center", gap: sidebarOpen ? 10 : 0, justifyContent: sidebarOpen ? "flex-start" : "center", borderBottom: "1px solid #f1f5f9" }}>
-        
-            </div>
-        
-        </div>
+        {/* Logo */}
+       <div style={{ padding: sidebarOpen ? "18px 16px 14px" : "18px 0 14px", borderBottom: "1px solid #f1f5f9" }} /> 
+    
 
         {/* Nav links */}
         <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
