@@ -1,29 +1,247 @@
 // File: frontend/src/pages/CourseDetail.tsx
 // Fetches course data from the real PHP API via useCourse hook.
+// Curriculum tab now renders real Parts → Modules → Lessons from course.content
 
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Star, Clock, BookOpen, Users, PlayCircle, FileText,
   Award, CheckCircle, MessageCircle, ArrowLeft, Loader2,
+  ChevronDown, ChevronRight, Film,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/components/layout/MainLayout';
 import EnrollmentModal from '@/components/EnrollmentModal';
-import { BUSINESS_INFO } from '@/data/mockData';   // business info only
+import { BUSINESS_INFO } from '@/data/mockData';
 import { useCourse } from '../hooks/useCourses';
+import type { CoursePart, CourseModule, Lesson } from '@/api/courses';
 
 const NAVY = '#0b1f3a';
 const GOLD = '#EAB308';
 const GOLD2 = '#CA8A04';
+const TEAL = '#0d9488';
 
-const curriculum = [
+// ── YouTube embed helper ──────────────────────────────────────────────
+function getYouTubeId(url: string): string | null {
+  const match = url?.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:.*v=|embed\/|shorts\/))([^&?/\s]{11})/
+  );
+  return match ? match[1] : null;
+}
+
+// ── Single lesson row + optional video modal ──────────────────────────
+function LessonRow({ lesson, partIdx, modIdx, lessonIdx }: {
+  lesson: Lesson; partIdx: number; modIdx: number; lessonIdx: number;
+}) {
+  const [videoOpen, setVideoOpen] = useState(false);
+  const ytId = getYouTubeId(lesson.videoUrl ?? '');
+
+  return (
+    <div style={{ borderBottom: '1px solid #f1f5f9' }}>
+      {/* Lesson header row */}
+      <div
+        onClick={() => ytId && setVideoOpen(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '11px 20px',
+          cursor: ytId ? 'pointer' : 'default',
+          transition: 'background .15s',
+        }}
+        onMouseEnter={e => { if (ytId) (e.currentTarget as HTMLDivElement).style.background = '#fafcff'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+      >
+        {/* Lesson number badge */}
+        <span style={{
+          minWidth: 22, height: 22, borderRadius: 6,
+          background: TEAL + '18', color: TEAL,
+          fontSize: 10, fontWeight: 800,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {lessonIdx + 1}
+        </span>
+
+        {ytId
+          ? <Film size={13} style={{ color: GOLD, flexShrink: 0 }} />
+          : <FileText size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
+        }
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: NAVY, lineHeight: 1.3 }}>
+            {lesson.title || `Lesson ${lessonIdx + 1}`}
+          </p>
+          {lesson.description && (
+            <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {lesson.description}
+            </p>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {lesson.duration && (
+            <span style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Clock size={11} /> {lesson.duration}
+            </span>
+          )}
+          {ytId && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+              background: GOLD + '18', color: GOLD2, border: `1px solid ${GOLD}40`,
+              display: 'flex', alignItems: 'center', gap: 3,
+            }}>
+              <PlayCircle size={10} /> {videoOpen ? 'Hide' : 'Watch'}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* YouTube embed — shown inline when clicked */}
+      {ytId && videoOpen && (
+        <div style={{ padding: '0 20px 14px' }}>
+          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0', background: '#000' }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+              style={{ width: '100%', height: 280, border: 'none', display: 'block' }}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              title={lesson.title || 'Lesson video'}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Module block (collapsible) ────────────────────────────────────────
+function ModuleBlock({ mod, partIdx, modIdx }: {
+  mod: CourseModule; partIdx: number; modIdx: number;
+}) {
+  const [open, setOpen] = useState(modIdx === 0); // first module open by default
+
+  return (
+    <div style={{ marginBottom: 8, border: '1px solid #e8edf2', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+      {/* Module header */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '11px 16px', cursor: 'pointer',
+          background: open ? TEAL + '08' : '#f8fafc',
+          borderBottom: open ? `1px solid ${TEAL}20` : 'none',
+          transition: 'background .15s',
+        }}
+      >
+        <div style={{
+          width: 22, height: 22, borderRadius: 6,
+          background: TEAL + '20', color: TEAL,
+          fontSize: 10, fontWeight: 800,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          {modIdx + 1}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontWeight: 700, fontSize: 13, color: NAVY }}>
+            {mod.title || `Module ${modIdx + 1}`}
+          </p>
+          {mod.description && (
+            <p style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{mod.description}</p>
+          )}
+        </div>
+        <span style={{ fontSize: 11, color: '#94a3b8', marginRight: 4 }}>
+          {mod.lessons?.length ?? 0} lesson{(mod.lessons?.length ?? 0) !== 1 ? 's' : ''}
+        </span>
+        {open
+          ? <ChevronDown size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+          : <ChevronRight size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+        }
+      </div>
+
+      {/* Lessons */}
+      {open && (mod.lessons ?? []).map((lesson, li) => (
+        <LessonRow
+          key={lesson.id ?? li}
+          lesson={lesson}
+          partIdx={partIdx}
+          modIdx={modIdx}
+          lessonIdx={li}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Part block (always expanded, collapsible by user) ─────────────────
+function PartBlock({ part, partIdx, totalParts }: {
+  part: CoursePart; partIdx: number; totalParts: number;
+}) {
+  const [open, setOpen] = useState(true);
+  const totalLessons = (part.modules ?? []).reduce((a, m) => a + (m.lessons?.length ?? 0), 0);
+
+  return (
+    <div style={{ marginBottom: 16, borderRadius: 14, overflow: 'hidden', border: `1.5px solid ${NAVY}18` }}>
+      {/* Part header */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 18px', cursor: 'pointer',
+          background: `linear-gradient(135deg,${NAVY}f5,#0f2d56)`,
+        }}
+      >
+        <div style={{
+          width: 28, height: 28, borderRadius: 8,
+          background: 'rgba(255,255,255,0.15)',
+          fontSize: 12, fontWeight: 800, color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          {partIdx + 1}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontWeight: 800, fontSize: 14, color: '#fff', lineHeight: 1.2 }}>
+            {part.title || `Part ${partIdx + 1}`}
+            {totalParts > 1 && (
+              <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.6, marginLeft: 8 }}>
+                Part {partIdx + 1} of {totalParts}
+              </span>
+            )}
+          </p>
+          {part.description && (
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{part.description}</p>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>
+            {part.modules?.length ?? 0} modules · {totalLessons} lessons
+          </span>
+          {open
+            ? <ChevronDown size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+            : <ChevronRight size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+          }
+        </div>
+      </div>
+
+      {/* Modules */}
+      {open && (
+        <div style={{ background: '#f8fafc', padding: '12px 12px 4px' }}>
+          {(part.modules ?? []).map((mod, mi) => (
+            <ModuleBlock key={mod.id ?? mi} mod={mod} partIdx={partIdx} modIdx={mi} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Fallback curriculum (when no content saved yet) ───────────────────
+const FALLBACK_CURRICULUM = [
   { module: 'Module 1: Introduction',    lessons: ['Welcome & Course Overview', 'Setting Up Your Environment', 'Understanding the Basics'] },
   { module: 'Module 2: Core Concepts',   lessons: ['Fundamental Principles', 'Hands-On Practice', 'Real-World Applications'] },
   { module: 'Module 3: Advanced Topics', lessons: ['Advanced Techniques', 'Industry Best Practices', 'Final Project'] },
 ];
 
+// ─────────────────────────────────────────────────────────────────────
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const { course, isLoading, error } = useCourse(id);
@@ -58,9 +276,21 @@ export default function CourseDetail() {
     `Hello HandyGidi! I'm interested in the "${course.title}" course (₦${course.price.toLocaleString()}). Please send me enrollment details.`
   )}`;
 
+  // Does this course have real structured content?
+  const hasParts = (course.content?.parts?.length ?? 0) > 0;
+
+  // Count real totals from content if available
+  const totalModules = hasParts
+    ? course.content!.parts.reduce((a, p) => a + (p.modules?.length ?? 0), 0)
+    : 0;
+  const totalLessonsFromContent = hasParts
+    ? course.content!.parts.reduce((a, p) =>
+        a + (p.modules ?? []).reduce((b, m) => b + (m.lessons?.length ?? 0), 0), 0)
+    : course.lessons;
+
   return (
     <MainLayout>
-      {/* PAGE HEADER */}
+      {/* ── PAGE HEADER ── */}
       <section className="py-10 md:py-16 text-white"
         style={{ background: `linear-gradient(135deg,#060d1c 0%,${NAVY} 60%,#0f2d56 100%)` }}>
         <div className="container">
@@ -79,8 +309,17 @@ export default function CourseDetail() {
                   <Star size={14} style={{ color: GOLD, fill: GOLD }} /> {course.rating}
                 </span>
                 <span className="flex items-center gap-1"><Users size={14} /> {course.enrolled} enrolled</span>
-                <span className="flex items-center gap-1"><Clock size={14} /> {course.duration}</span>
-                <span className="flex items-center gap-1"><BookOpen size={14} /> {course.lessons} lessons</span>
+                {course.duration && (
+                  <span className="flex items-center gap-1"><Clock size={14} /> {course.duration}</span>
+                )}
+                <span className="flex items-center gap-1">
+                  <BookOpen size={14} /> {totalLessonsFromContent} lessons
+                </span>
+                {hasParts && totalModules > 0 && (
+                  <span className="flex items-center gap-1">
+                    <FileText size={14} /> {totalModules} modules
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-4">
                 <img
@@ -95,7 +334,7 @@ export default function CourseDetail() {
         </div>
       </section>
 
-      {/* MAIN CONTENT */}
+      {/* ── MAIN CONTENT ── */}
       <section className="py-10 md:py-16 bg-slate-50">
         <div className="container flex flex-col lg:flex-row gap-8">
 
@@ -104,11 +343,23 @@ export default function CourseDetail() {
             <Tabs defaultValue="overview">
               <TabsList className="w-full justify-start bg-white border border-slate-100 mb-6 rounded-xl">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+                <TabsTrigger value="curriculum">
+                  Curriculum
+                  {hasParts && (
+                    <span style={{
+                      marginLeft: 6, fontSize: 10, fontWeight: 800,
+                      padding: '1px 6px', borderRadius: 99,
+                      background: TEAL + '20', color: TEAL,
+                    }}>
+                      {totalLessonsFromContent}
+                    </span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="instructor">Instructor</TabsTrigger>
                 <TabsTrigger value="reviews">Reviews</TabsTrigger>
               </TabsList>
 
+              {/* ── OVERVIEW ── */}
               <TabsContent value="overview">
                 <div className="bg-white rounded-2xl border border-slate-100 p-6">
                   <h3 className="font-heading font-semibold text-lg mb-3" style={{ color: NAVY }}>About This Course</h3>
@@ -132,27 +383,58 @@ export default function CourseDetail() {
                 </div>
               </TabsContent>
 
+              {/* ── CURRICULUM ── */}
               <TabsContent value="curriculum">
-                <div className="space-y-4">
-                  {curriculum.map((mod, i) => (
-                    <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-                      <div className="px-5 py-3 font-heading font-semibold text-sm text-white"
-                        style={{ background: `linear-gradient(135deg,${NAVY},#0f2d56)` }}>
-                        {mod.module}
-                      </div>
-                      <div className="divide-y divide-slate-100">
-                        {mod.lessons.map((lesson, j) => (
-                          <div key={j} className="px-5 py-3 flex items-center gap-2 text-sm text-slate-500">
-                            <PlayCircle size={14} style={{ color: GOLD }} className="shrink-0" />
-                            {lesson}
-                          </div>
-                        ))}
-                      </div>
+                {hasParts ? (
+                  <div>
+                    {/* Summary bar */}
+                    <div style={{
+                      display: 'flex', gap: 16, flexWrap: 'wrap',
+                      background: '#fff', border: '1px solid #e8edf2',
+                      borderRadius: 12, padding: '12px 18px', marginBottom: 16,
+                      fontSize: 12, color: '#64748b',
+                    }}>
+                      <span style={{ fontWeight: 700, color: NAVY }}>Course Content</span>
+                      <span>{course.content!.parts.length} part{course.content!.parts.length !== 1 ? 's' : ''}</span>
+                      <span>{totalModules} module{totalModules !== 1 ? 's' : ''}</span>
+                      <span>{totalLessonsFromContent} lesson{totalLessonsFromContent !== 1 ? 's' : ''}</span>
+                      {course.duration && <span>{course.duration} total</span>}
                     </div>
-                  ))}
-                </div>
+
+                    {/* Parts */}
+                    {course.content!.parts.map((part, pi) => (
+                      <PartBlock
+                        key={part.id ?? pi}
+                        part={part}
+                        partIdx={pi}
+                        totalParts={course.content!.parts.length}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  /* Fallback: no content saved yet */
+                  <div className="space-y-4">
+                    {FALLBACK_CURRICULUM.map((mod, i) => (
+                      <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                        <div className="px-5 py-3 font-heading font-semibold text-sm text-white"
+                          style={{ background: `linear-gradient(135deg,${NAVY},#0f2d56)` }}>
+                          {mod.module}
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                          {mod.lessons.map((lesson, j) => (
+                            <div key={j} className="px-5 py-3 flex items-center gap-2 text-sm text-slate-500">
+                              <PlayCircle size={14} style={{ color: GOLD }} className="shrink-0" />
+                              {lesson}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
 
+              {/* ── INSTRUCTOR ── */}
               <TabsContent value="instructor">
                 <div className="bg-white rounded-2xl border border-slate-100 p-6 flex items-start gap-4">
                   <img
@@ -170,6 +452,7 @@ export default function CourseDetail() {
                 </div>
               </TabsContent>
 
+              {/* ── REVIEWS ── */}
               <TabsContent value="reviews">
                 <div className="bg-white rounded-2xl border border-slate-100 p-6 text-center text-sm text-slate-400">
                   No reviews yet. Be the first to review this course!
@@ -178,7 +461,7 @@ export default function CourseDetail() {
             </Tabs>
           </div>
 
-          {/* SIDEBAR */}
+          {/* ── SIDEBAR ── */}
           <div className="w-full lg:w-80 shrink-0">
             <div className="bg-white border border-slate-100 rounded-2xl p-6 sticky top-20 shadow-sm">
               <img
@@ -227,7 +510,8 @@ export default function CourseDetail() {
                   This course includes:
                 </p>
                 {[
-                  { icon: PlayCircle, text: `${course.duration} of training` },
+                  { icon: PlayCircle, text: `${course.duration ?? 'Flexible'} of training` },
+                  { icon: BookOpen,   text: `${totalLessonsFromContent} lessons` },
                   { icon: FileText,   text: 'Downloadable resources' },
                   { icon: Award,      text: 'Certificate of completion' },
                   { icon: Clock,      text: 'Lifetime access' },
