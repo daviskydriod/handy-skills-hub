@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen, Search, CheckCircle, TrendingUp, ArrowRight,
-  RefreshCw, Play, Clock, Users, Bell, BarChart2, Star,
+  RefreshCw, Play, Clock, Users, BarChart2, Star,
   CreditCard, Upload, X, AlertCircle, Copy, Check,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -16,7 +16,7 @@ const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
 
-// ── Bank account details (update with client's real details) ──
+// ── Bank account details ──────────────────────────────────────────────
 const BANK_DETAILS = {
   bankName:      "First Bank Nigeria",
   accountNumber: "0123456789",
@@ -25,13 +25,7 @@ const BANK_DETAILS = {
 
 type TabType = "overview" | "my-courses" | "explore";
 
-interface PaymentStatus {
-  courseId: number;
-  status: "idle" | "showBank" | "uploading" | "pending" | "approved" | "rejected";
-  rejectionReason?: string;
-}
-
-/* ── helpers ── */
+/* ── helpers ─────────────────────────────────────────────────────────*/
 const CourseThumb = ({ image, title, size = 44 }: { image?: string | null; title?: string; size?: number }) => {
   const cols = ["#0d9488","#0891b2","#7c3aed","#db2777","#d97706","#16a34a"];
   const col = cols[(title?.charCodeAt(0) ?? 0) % cols.length];
@@ -63,7 +57,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-/* ── Payment Flow Modal ── */
+/* ── Payment Flow Modal ──────────────────────────────────────────────*/
 const PaymentModal = ({
   course,
   onClose,
@@ -94,34 +88,58 @@ const PaymentModal = ({
   };
 
   const handleSubmit = async () => {
-    if (!file) { toast({ title:"Please upload your payment receipt", variant:"destructive" }); return; }
+    if (!file) {
+      toast({ title: "Please upload your payment receipt", variant: "destructive" });
+      return;
+    }
     setSub(true);
     try {
       const fd = new FormData();
+      // ✅ Append as plain strings — PHP reads these via $_POST
       fd.append("course_id", String(course.id));
-      fd.append("amount", String(course.price));
+      fd.append("amount",    String(course.price));
       fd.append("proof_image", file);
-      await client.post("/payments", fd);
+
+      // ✅ Do NOT set Content-Type manually — axios must set it automatically
+      //    so the multipart boundary is included correctly.
+      //    Wrong:  { headers: { "Content-Type": "multipart/form-data" } }
+      //    Right:  let axios detect FormData and set the header itself
+      await client.post("/payments", fd, {
+        headers: {
+          // ✅ Explicitly DELETE the default application/json header
+          // so axios sets multipart/form-data with the correct boundary
+          "Content-Type": undefined,
+        },
+      });
+
       setStep("done");
       onSubmitted();
     } catch (err: any) {
-      toast({ title: err.response?.data?.error ?? "Failed to submit payment", variant:"destructive" });
-    } finally { setSub(false); }
+      const msg = err.response?.data?.error ?? "Failed to submit payment. Please try again.";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setSub(false);
+    }
   };
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
-      onClick={onClose}>
-      <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:440, width:"100%", maxHeight:"90vh", overflowY:"auto" }}
-        onClick={e => e.stopPropagation()}>
-
+    <div
+      style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:440, width:"100%", maxHeight:"90vh", overflowY:"auto" }}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
           <div>
             <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:17, color:NAVY, marginBottom:3 }}>
               {step === "done" ? "Payment Submitted! 🎉" : "Enroll in Course"}
             </h3>
-            <p style={{ fontSize:12, color:"#64748b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:280 }}>{course.title}</p>
+            <p style={{ fontSize:12, color:"#64748b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:280 }}>
+              {course.title}
+            </p>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:"#94a3b8", fontSize:22, lineHeight:1 }}>×</button>
         </div>
@@ -153,7 +171,10 @@ const PaymentModal = ({
                   <p style={{ fontSize:11, color:"#94a3b8", marginBottom:4 }}>Account Number</p>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <p style={{ fontSize:20, fontWeight:800, color:NAVY, letterSpacing:2 }}>{BANK_DETAILS.accountNumber}</p>
-                    <button onClick={copyAcct} style={{ background:copied?"#d1fae5":"#f1f5f9", border:"none", borderRadius:8, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4, fontSize:11, fontWeight:700, color:copied?"#065f46":"#64748b", transition:"all .2s" }}>
+                    <button
+                      onClick={copyAcct}
+                      style={{ background:copied?"#d1fae5":"#f1f5f9", border:"none", borderRadius:8, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4, fontSize:11, fontWeight:700, color:copied?"#065f46":"#64748b", transition:"all .2s" }}
+                    >
                       {copied ? <><Check size={11}/> Copied!</> : <><Copy size={11}/> Copy</>}
                     </button>
                   </div>
@@ -197,7 +218,10 @@ const PaymentModal = ({
               </button>
             ) : (
               <div style={{ position:"relative", marginBottom:18 }}>
-                <img src={preview} alt="Receipt" style={{ width:"100%", borderRadius:12, border:"1px solid #e2e8f0", maxHeight:260, objectFit:"contain", background:"#f8fafc" }} />
+                <img
+                  src={preview} alt="Receipt"
+                  style={{ width:"100%", borderRadius:12, border:"1px solid #e2e8f0", maxHeight:260, objectFit:"contain", background:"#f8fafc" }}
+                />
                 <button
                   onClick={() => { setFile(null); setPreview(null); }}
                   style={{ position:"absolute", top:8, right:8, width:24, height:24, borderRadius:"50%", background:"#ef4444", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}
@@ -250,45 +274,47 @@ const PaymentModal = ({
   );
 };
 
-/* ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════ */
 interface Props { defaultTab?: TabType; }
 
 export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   const { user, isAuthenticated } = useAuth();
 
-  const [tab,          setTab]        = useState<TabType>(defaultTab);
-  const [enrolled,     setEnrolled]   = useState<EnrolledCourse[]>([]);
-  const [explore,      setExplore]    = useState<Course[]>([]);
-  const [loadingE,     setLE]         = useState(true);
-  const [loadingX,     setLX]         = useState(false);
-  const [search,       setSearch]     = useState("");
-  const [payingCourse, setPayingCourse] = useState<Course | null>(null);
+  const [tab,           setTab]         = useState<TabType>(defaultTab);
+  const [enrolled,      setEnrolled]    = useState<EnrolledCourse[]>([]);
+  const [explore,       setExplore]     = useState<Course[]>([]);
+  const [loadingE,      setLE]          = useState(true);
+  const [loadingX,      setLX]          = useState(false);
+  const [search,        setSearch]      = useState("");
+  const [payingCourse,  setPayingCourse] = useState<Course | null>(null);
 
   const enrolledIds = new Set(enrolled.map(c => c.id));
 
   const fetchEnrolled = useCallback(async () => {
     setLE(true);
     try   { setEnrolled(await getMyEnrollments()); }
-    catch { toast({ title:"Failed to load your courses", variant:"destructive" }); }
+    catch { toast({ title: "Failed to load your courses", variant: "destructive" }); }
     finally { setLE(false); }
   }, []);
 
   const fetchExplore = useCallback(async () => {
     setLX(true);
-    try   { const r = await getCourses({ limit:12 }); setExplore(r.courses); }
-    catch { toast({ title:"Failed to load courses", variant:"destructive" }); }
+    try   { const r = await getCourses({ limit: 12 }); setExplore(r.courses); }
+    catch { toast({ title: "Failed to load courses", variant: "destructive" }); }
     finally { setLX(false); }
   }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    fetchEnrolled(); fetchExplore();
+    fetchEnrolled();
+    fetchExplore();
   }, [isAuthenticated, fetchEnrolled, fetchExplore]);
 
   useEffect(() => {
     const fn = () => {
       if (document.visibilityState === "visible" && isAuthenticated) {
-        fetchEnrolled(); fetchExplore();
+        fetchEnrolled();
+        fetchExplore();
       }
     };
     document.addEventListener("visibilitychange", fn);
@@ -298,7 +324,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   const total       = enrolled.length;
   const completed   = enrolled.filter(c => c.completed).length;
   const inProgress  = enrolled.filter(c => !c.completed && c.progress > 0).length;
-  const avgProgress = total ? Math.round(enrolled.reduce((a,c) => a+c.progress, 0)/total) : 0;
+  const avgProgress = total ? Math.round(enrolled.reduce((a, c) => a + c.progress, 0) / total) : 0;
 
   const filteredExplore = explore.filter(c =>
     c.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -306,8 +332,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   );
 
   return (
-   
-    <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
+    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif" }}>
       <style>{`
         .card{background:#fff;border-radius:16px;border:1px solid #e8edf2;}
         .btnt{background:linear-gradient(135deg,${TEAL},${TEAL2});color:#fff;border:none;border-radius:99px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
@@ -341,15 +366,15 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
         />
       )}
 
-      <div style={{ maxWidth:1200, margin:"0 auto", padding:"24px 16px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 16px" }}>
 
         {/* ── STAT CARDS ── */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:24 }} className="g4">
           {[
-            { label:"Enrolled",    value:loadingE?"—":total,           icon:BookOpen,    color:TEAL,      bg:TEAL+"15" },
-            { label:"Completed",   value:loadingE?"—":completed,       icon:CheckCircle, color:"#10b981", bg:"#10b98115" },
-            { label:"In Progress", value:loadingE?"—":inProgress,      icon:TrendingUp,  color:"#3b82f6", bg:"#3b82f615" },
-            { label:"Avg Progress",value:loadingE?"—":`${avgProgress}%`,icon:BarChart2,  color:"#8b5cf6", bg:"#8b5cf615" },
+            { label:"Enrolled",     value:loadingE?"—":total,            icon:BookOpen,    color:TEAL,      bg:TEAL+"15" },
+            { label:"Completed",    value:loadingE?"—":completed,        icon:CheckCircle, color:"#10b981", bg:"#10b98115" },
+            { label:"In Progress",  value:loadingE?"—":inProgress,       icon:TrendingUp,  color:"#3b82f6", bg:"#3b82f615" },
+            { label:"Avg Progress", value:loadingE?"—":`${avgProgress}%`,icon:BarChart2,   color:"#8b5cf6", bg:"#8b5cf615" },
           ].map(({ label, value, icon:Icon, color, bg }) => (
             <div key={label} className="card" style={{ padding:16, display:"flex", alignItems:"center", gap:12 }}>
               <div style={{ width:42, height:42, borderRadius:12, background:bg, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -367,9 +392,9 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
         <div className="tab-scroll" style={{ marginBottom:24 }}>
           <div style={{ display:"flex", gap:4, background:"#fff", border:"1px solid #e8edf2", borderRadius:14, padding:5, width:"fit-content" }}>
             {([
-              { key:"overview",   label:"Overview" },
-              { key:"my-courses", label:"My Courses" },
-              { key:"explore",    label:"Explore" },
+              { key:"overview",   label:"Overview"    },
+              { key:"my-courses", label:"My Courses"  },
+              { key:"explore",    label:"Explore"     },
             ] as const).map(({ key, label }) => (
               <button key={key} onClick={() => setTab(key)} className={`ntab${tab===key?" on":""}`}>{label}</button>
             ))}
@@ -387,7 +412,10 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                 </h2>
                 <p style={{ color:"rgba(255,255,255,.65)", fontSize:13 }}>Pick up where you left off.</p>
               </div>
-              <button onClick={() => { fetchEnrolled(); fetchExplore(); }} style={{ background:"rgba(255,255,255,.12)", border:"none", borderRadius:99, padding:"8px 16px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit", display:"flex", alignItems:"center", gap:6 }}>
+              <button
+                onClick={() => { fetchEnrolled(); fetchExplore(); }}
+                style={{ background:"rgba(255,255,255,.12)", border:"none", borderRadius:99, padding:"8px 16px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit", display:"flex", alignItems:"center", gap:6 }}
+              >
                 <RefreshCw size={12} /> Refresh
               </button>
             </div>
@@ -537,7 +565,8 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
             </div>
             <div style={{ position:"relative", marginBottom:20 }}>
               <Search size={15} style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", color:"#94a3b8" }} />
-              <input value={search} onChange={e => setSearch(e.target.value)}
+              <input
+                value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by title or category…"
                 style={{ width:"100%", paddingLeft:42, paddingRight:14, paddingTop:11, paddingBottom:11, borderRadius:12, border:"1.5px solid #e2e8f0", background:"#fff", fontSize:13, outline:"none", fontFamily:"inherit", color:NAVY }}
               />
@@ -603,6 +632,5 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
         )}
       </div>
     </div>
- 
   );
 }
