@@ -15,7 +15,7 @@ import { getCourses, type Course } from "@/api/courses";
 import { submitPayment, getMyPayments, type Payment } from "@/api/payments";
 
 // ── Theme (matches InstructorDashboard) ──────────────────────────────
-const TEAL    = "#0d9488";
+const TEAL    = "#0b1f3a";
 const TEAL2   = "#0f766e";
 const NAVY    = "#0b1f3a";
 const SIDEBAR_W = 240;
