@@ -1,5 +1,3 @@
-typescript
-
 // File: frontend/src/pages/CourseDetail.tsx
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
