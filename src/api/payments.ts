@@ -54,7 +54,6 @@ export interface ReviewPaymentPayload {
 export async function getPayments(
   filter: PaymentsFilter = {}
 ): Promise<Payment[]> {
-  // Only send status if it's a real value
   const params: Record<string, string> = {};
   if (filter.status) params.status = filter.status;
 
@@ -65,17 +64,12 @@ export async function getPayments(
 /**
  * Student — get own payment history.
  * GET /payments/my
- *
- * Falls back to GET /payments?path=my if the server doesn't support
- * PATH_INFO (common on shared/flat PHP hosting).
  */
 export async function getMyPayments(): Promise<Payment[]> {
   try {
-    // Primary: /payments/my  (works if server has PATH_INFO or URL rewriting)
     const res = await client.get<PaymentsResponse>("/payments/my");
     return res.data.payments;
   } catch (err: any) {
-    // Fallback: /payments?path=my  (works on flat PHP setups)
     if (err?.response?.status === 404 || err?.response?.status === 403) {
       const res = await client.get<PaymentsResponse>("/payments", {
         params: { path: "my" },
@@ -90,6 +84,12 @@ export async function getMyPayments(): Promise<Payment[]> {
  * Student — submit a bank transfer payment with proof image.
  * POST /payments  (multipart/form-data)
  *
+ * ✅ FIX: Do NOT manually set Content-Type to "multipart/form-data".
+ *    Setting it manually strips the multipart boundary, causing PHP to
+ *    receive empty $_POST and $_FILES. Setting it to `undefined` forces
+ *    axios to detect the FormData and set the full header automatically,
+ *    including the correct boundary token.
+ *
  * @example
  * const form = new FormData();
  * form.append("course_id", String(courseId));
@@ -103,7 +103,13 @@ export async function submitPayment(formData: FormData): Promise<{
   status: "pending";
 }> {
   const res = await client.post("/payments", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: {
+      // ✅ CRITICAL: Set to undefined so axios auto-generates the full
+      // "multipart/form-data; boundary=----WebKitFormBoundaryXXX" header.
+      // If you manually write "multipart/form-data" here, the boundary is
+      // omitted and PHP cannot parse $_POST or $_FILES — upload always fails.
+      "Content-Type": undefined,
+    },
   });
   return res.data;
 }
@@ -123,11 +129,9 @@ export async function reviewPayment(
   payload: ReviewPaymentPayload
 ): Promise<{ message: string; status: PaymentStatus }> {
   try {
-    // Primary: /payments/{id}
     const res = await client.put(`/payments/${id}`, payload);
     return res.data;
   } catch (err: any) {
-    // Fallback: /payments?id={id}
     if (err?.response?.status === 404 || err?.response?.status === 400) {
       const res = await client.put(`/payments`, payload, {
         params: { id },
