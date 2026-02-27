@@ -10,28 +10,12 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import client from "@/api/client";
 import { deleteCourse, updateCourse, type Course } from "@/api/courses";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import { getPayments, reviewPayment, type Payment } from "@/api/payments";
 
 interface ApiUser {
   id: number; name: string; email: string;
   role: "student" | "instructor" | "admin";
   is_active: boolean; created_at: string;
-}
-
-interface Payment {
-  id: number;
-  user_id: number;
-  course_id: number;
-  amount: number;
-  proof_image: string;
-  status: "pending" | "approved" | "rejected";
-  rejection_reason?: string;
-  reviewed_by?: number;
-  reviewed_at?: string;
-  created_at: string;
-  user_name?: string;
-  user_email?: string;
-  course_title?: string;
 }
 
 type TabType = "overview" | "payments" | "users" | "courses";
@@ -105,8 +89,8 @@ export default function AdminDashboard() {
   const fetchPayments = useCallback(async () => {
     setLP(true);
     try {
-      const res = await client.get<{ payments: Payment[] }>("/payments");
-      setPayments(res.data.payments ?? []);
+      const data = await getPayments();
+      setPayments(data);
     } catch {
       toast({ title:"Failed to load payments", variant:"destructive" });
     } finally { setLP(false); }
@@ -155,11 +139,12 @@ export default function AdminDashboard() {
   const approvePayment = async (payment: Payment) => {
     setActioningPay(payment.id);
     try {
-      await client.put(`/payments/${payment.id}`, { status:"approved" });
+      await reviewPayment(payment.id, { status: "approved" });
       setPayments(prev => prev.map(p => p.id===payment.id ? { ...p, status:"approved" } : p));
       toast({ title:`✅ Payment approved — ${payment.user_name} enrolled in ${payment.course_title}` });
-    } catch { toast({ title:"Failed to approve", variant:"destructive" }); }
-    finally { setActioningPay(null); }
+    } catch {
+      toast({ title:"Failed to approve", variant:"destructive" });
+    } finally { setActioningPay(null); }
   };
 
   /* ── reject payment ── */
@@ -170,13 +155,16 @@ export default function AdminDashboard() {
     }
     setActioningPay(payment.id);
     try {
-      await client.put(`/payments/${payment.id}`, { status:"rejected", rejection_reason:rejectReason });
-      setPayments(prev => prev.map(p => p.id===payment.id ? { ...p, status:"rejected", rejection_reason:rejectReason } : p));
+      await reviewPayment(payment.id, { status: "rejected", rejection_reason: rejectReason });
+      setPayments(prev => prev.map(p =>
+        p.id===payment.id ? { ...p, status:"rejected", rejection_reason:rejectReason } : p
+      ));
       setRejectingId(null);
       setRejectReason("");
       toast({ title:"Payment rejected — student notified" });
-    } catch { toast({ title:"Failed to reject", variant:"destructive" }); }
-    finally { setActioningPay(null); }
+    } catch {
+      toast({ title:"Failed to reject", variant:"destructive" });
+    } finally { setActioningPay(null); }
   };
 
   /* ── course actions ── */
@@ -379,7 +367,7 @@ export default function AdminDashboard() {
             ] as const).map(({ key, label, icon, badge }) => (
               <button key={key} onClick={() => setTab(key as TabType)} className={`ntab${tab===key?" on":""}`}>
                 {icon} {label}
-                {badge > 0 && (
+                {(badge ?? 0) > 0 && (
                   <span style={{ background:"#f97316", color:"#fff", fontSize:9, fontWeight:800, padding:"1px 5px", borderRadius:99, marginLeft:2 }}>{badge}</span>
                 )}
               </button>
@@ -545,14 +533,15 @@ export default function AdminDashboard() {
                     {p.status.charAt(0).toUpperCase()+p.status.slice(1)}
                   </span>
                   <div style={{ display:"flex", gap:4, justifyContent:"flex-end" }}>
-                    {/* View receipt */}
-                    <button
-                      onClick={() => setViewReceipt(p.proof_image)}
-                      className="icn"
-                      title="View receipt"
-                    >
-                      <ImageIcon size={13} style={{ color:"#3b82f6" }}/>
-                    </button>
+                    {p.proof_image && (
+                      <button
+                        onClick={() => setViewReceipt(p.proof_image)}
+                        className="icn"
+                        title="View receipt"
+                      >
+                        <ImageIcon size={13} style={{ color:"#3b82f6" }}/>
+                      </button>
+                    )}
                     {p.status === "pending" && (
                       <>
                         <button onClick={() => approvePayment(p)} disabled={actioningPay===p.id} className="btna">
