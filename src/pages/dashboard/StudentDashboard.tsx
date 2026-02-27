@@ -1,7 +1,6 @@
 // File: src/pages/dashboard/StudentDashboard.tsx
-import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   BookOpen, Search, CheckCircle, TrendingUp, BarChart2,
   RefreshCw, Play, Clock, Users, Star, CreditCard, Upload,
@@ -15,22 +14,7 @@ import { getMyEnrollments, type EnrolledCourse } from "@/api/enrollments";
 import { getCourses, type Course } from "@/api/courses";
 import { submitPayment, getMyPayments, type Payment } from "@/api/payments";
 
-
-const location = useLocation();
-
-useEffect(() => {
-  if (!isAuthenticated) return;
-  // Fires on every navigation TO this page, with a short delay
-  // to allow the player's 2-second debounced sync to complete
-  const timer = setTimeout(() => {
-    fetchEnrolled();
-    fetchPayments();
-  }, 600);
-  return () => clearTimeout(timer);
-}, [location, isAuthenticated, fetchEnrolled, fetchPayments]);
-
 // ── Theme ─────────────────────────────────────────────────────────────
-// ✅ FIX: TEAL was incorrectly set to "#0b1f3a" (navy). Corrected to teal.
 const TEAL    = "#0d9488";
 const TEAL2   = "#0f766e";
 const NAVY    = "#0b1f3a";
@@ -266,6 +250,7 @@ interface Props { defaultTab?: TabType; }
 export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ INSIDE component
 
   const [sidebarOpen,  setSidebarOpen]  = useState(true);
   const [tab,          setTab]          = useState<TabType>(defaultTab);
@@ -309,9 +294,17 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
     fetchEnrolled(); fetchExplore(); fetchPayments();
   }, [isAuthenticated, fetchEnrolled, fetchExplore, fetchPayments]);
 
-  // ✅ FIX: Re-fetch enrolled courses when user comes BACK to this tab
-  // from the course player — this is what updates the progress bars.
-  // The player syncs progress to the DB, and this pulls the fresh data.
+  // ✅ Re-fetch when navigating back to this page (e.g. from course player)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const timer = setTimeout(() => {
+      fetchEnrolled();
+      fetchPayments();
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [location, isAuthenticated, fetchEnrolled, fetchPayments]);
+
+  // Re-fetch on visibility change (switching browser tabs)
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === "visible" && isAuthenticated) {
@@ -323,8 +316,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [isAuthenticated, fetchEnrolled, fetchPayments]);
 
-  // ✅ FIX: Also refresh when the browser tab gets focus (covers
-  // the case where the player is on the same tab via router navigation)
+  // Re-fetch on window focus
   useEffect(() => {
     const onFocus = () => {
       if (isAuthenticated) fetchEnrolled();
