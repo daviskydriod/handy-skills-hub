@@ -322,7 +322,7 @@ export default function StudentCoursePlayer() {
               <div style={{ position: "relative", paddingTop: "min(56.25%, 72vh)" }}>
                 <iframe
                   key={`${activePart}-${activeMod}-${activeLesson}`}
-                  src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
+                  src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&iv_load_policy=3&playsinline=1`}
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
