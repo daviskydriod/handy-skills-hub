@@ -11,12 +11,11 @@ import { useAuth } from "@/context/AuthContext";
 import { getMyEnrollments, type EnrolledCourse } from "@/api/enrollments";
 import { getCourses, type Course } from "@/api/courses";
 import client from "@/api/client";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
-const GOLD  = "#EAB308";
-const BG    = "#f0f4f8";
 
 // ── Bank account details (update with client's real details) ──
 const BANK_DETAILS = {
@@ -308,10 +307,9 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:BG, fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
+    <DashboardLayout>
+    <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Sora:wght@700;800&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0;}
         .card{background:#fff;border-radius:16px;border:1px solid #e8edf2;}
         .btnt{background:linear-gradient(135deg,${TEAL},${TEAL2});color:#fff;border:none;border-radius:99px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
         .btnt:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(13,148,136,.3);}
@@ -606,5 +604,6 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
         )}
       </div>
     </div>
+    </DashboardLayout>
   );
 }
