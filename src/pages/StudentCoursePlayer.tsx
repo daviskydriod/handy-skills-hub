@@ -18,6 +18,27 @@ const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
 
+
+
+
+
+// Add this useEffect to StudentCoursePlayer.tsx
+useEffect(() => {
+  return () => {
+    // Flush any pending sync immediately on unmount (navigating away)
+    if (syncTimer.current) {
+      clearTimeout(syncTimer.current);
+      // Fire immediately
+      if (userId && courseId && totalLessons > 0) {
+        const pct = Math.round((done.size / totalLessons) * 100);
+        updateProgress(Number(courseId), pct, pct === 100).catch(() => {});
+      }
+    }
+  };
+}, [done, userId, courseId, totalLessons]);
+
+
+
 // ── YouTube helper ────────────────────────────────────────────────────
 function getYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -143,7 +164,7 @@ export default function StudentCoursePlayer() {
       } finally {
         setSyncing(false);
       }
-    }, 2000);
+    }, 800);
   }, [userId, courseId, totalLessons]);
 
   const markDone = useCallback((key: string) => {
