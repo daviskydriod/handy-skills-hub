@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { BUSINESS_INFO } from '@/data/mockData';
-import { useCourses } from '../hooks/useCourses';        // ✅ named export from useCourse.ts
+import { useCourses } from '../hooks/useCourses';
 import type { Course } from '../api/courses';
 import type { CoursesFilter } from '../api/courses';
 
@@ -110,15 +110,25 @@ export default function Courses() {
   const [sort,        setSort]        = useState<CoursesFilter['sort']>('default');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // ✅ Only pass sort to the API when it's a real backend-accepted value
   const filter: CoursesFilter = useMemo(
-    () => ({ category: category || undefined, search: search || undefined, sort }),
+    () => ({
+      category: category || undefined,
+      search:   search   || undefined,
+      sort:     sort !== 'default' ? sort : undefined,
+    }),
     [category, search, sort]
   );
 
-  const { courses, total, isLoading, error } = useCourses(filter); // ✅ correct
+  const { courses, total, isLoading, error } = useCourses(filter);
 
-  const clearFilters = useCallback(() => { setCategory(''); setSearch(''); setSort('default'); }, []);
-  const hasActive    = !!category || !!search || sort !== 'default';
+  const clearFilters = useCallback(() => {
+    setCategory('');
+    setSearch('');
+    setSort('default');
+  }, []);
+
+  const hasActive = !!category || !!search || sort !== 'default';
 
   const derivedCategories = useMemo(() => {
     const seen = new Set<string>();
@@ -181,10 +191,14 @@ export default function Courses() {
                   <li>
                     <button onClick={() => setCategory('')}
                       className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all"
-                      style={!category ? { background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: '#060d1c' } : { color: '#64748b' }}>
+                      style={!category
+                        ? { background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: '#060d1c' }
+                        : { color: '#64748b' }}>
                       <span className="flex items-center gap-2"><GraduationCap size={13} /> All Courses</span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                        style={!category ? { background: 'rgba(0,0,0,0.15)', color: '#fff' } : { background: '#f1f5f9', color: '#64748b' }}>
+                        style={!category
+                          ? { background: 'rgba(0,0,0,0.15)', color: '#fff' }
+                          : { background: '#f1f5f9', color: '#64748b' }}>
                         {total}
                       </span>
                     </button>
@@ -196,7 +210,9 @@ export default function Courses() {
                       <li key={cat}>
                         <button onClick={() => setCategory(cat)}
                           className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all hover:bg-slate-50"
-                          style={active ? { background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: '#060d1c' } : { color: '#475569' }}>
+                          style={active
+                            ? { background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: '#060d1c' }
+                            : { color: '#475569' }}>
                           <Icon size={13} /> {cat}
                         </button>
                       </li>
@@ -220,7 +236,9 @@ export default function Courses() {
                       : { color: '#64748b', border: '1px solid transparent' }}>
                     <span className="w-3 h-3 rounded-full border-2 shrink-0 flex items-center justify-center"
                       style={{ borderColor: sort === opt.val ? GOLD : '#cbd5e1' }}>
-                      {sort === opt.val && <span className="w-1.5 h-1.5 rounded-full block" style={{ background: GOLD }} />}
+                      {sort === opt.val && (
+                        <span className="w-1.5 h-1.5 rounded-full block" style={{ background: GOLD }} />
+                      )}
                     </span>
                     {opt.label}
                   </button>
@@ -244,8 +262,12 @@ export default function Courses() {
                     className="lg:hidden flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold
                                border border-slate-200 bg-white text-slate-600 hover:border-yellow-400 transition-all">
                     <Filter size={12} /> Filters
-                    {hasActive && <span className="w-4 h-4 rounded-full text-[9px] font-extrabold text-white
-                                                  flex items-center justify-center" style={{ background: GOLD }}>!</span>}
+                    {hasActive && (
+                      <span className="w-4 h-4 rounded-full text-[9px] font-extrabold text-white
+                                       flex items-center justify-center" style={{ background: GOLD }}>
+                        !
+                      </span>
+                    )}
                   </button>
                   <p className="text-sm text-slate-500">
                     <span className="font-extrabold" style={{ color: NAVY }}>{total}</span> courses
@@ -272,14 +294,18 @@ export default function Courses() {
                   {courses.length > 0 ? (
                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                       <AnimatePresence mode="popLayout">
-                        {courses.map((course) => <CourseCard key={course.id} course={course} />)}
+                        {courses.map((course) => (
+                          <CourseCard key={course.id} course={course} />
+                        ))}
                       </AnimatePresence>
                     </motion.div>
                   ) : (
                     <motion.div key="empty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                       className="text-center py-24 bg-white rounded-2xl border border-slate-100">
                       <Search size={24} className="mx-auto mb-4" style={{ color: GOLD }} />
-                      <h3 className="font-heading font-extrabold text-lg mb-2" style={{ color: NAVY }}>No courses found</h3>
+                      <h3 className="font-heading font-extrabold text-lg mb-2" style={{ color: NAVY }}>
+                        No courses found
+                      </h3>
                       <button onClick={clearFilters}
                         className="inline-flex items-center gap-2 font-bold px-6 py-2.5 rounded-full text-sm mt-4"
                         style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: '#060d1c' }}>
