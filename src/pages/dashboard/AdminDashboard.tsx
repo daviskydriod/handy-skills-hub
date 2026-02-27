@@ -4,10 +4,12 @@ import {
   LayoutDashboard, Users, BookOpen, CheckCircle, XCircle,
   Clock, Trash2, ToggleLeft, ToggleRight, TrendingUp,
   DollarSign, RefreshCw, Search, ShieldCheck, Eye, EyeOff,
-  CreditCard, AlertCircle, ImageIcon,
+  CreditCard, AlertCircle, ImageIcon, Bell, LogOut,
+  ChevronLeft, Menu,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import client from "@/api/client";
 import { deleteCourse, updateCourse, type Course } from "@/api/courses";
 import { getPayments, reviewPayment, type Payment } from "@/api/payments";
@@ -23,6 +25,7 @@ type TabType = "overview" | "payments" | "users" | "courses";
 const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
+const SIDEBAR_W = 240;
 
 /* ── helpers ── */
 const CourseThumb = ({ image, title, size = 40 }: { image?: string | null; title?: string; size?: number }) => {
@@ -63,10 +66,46 @@ const roleStyle: Record<string,{ bg:string; color:string; border:string }> = {
   student:    { bg:"#f1f5f9", color:"#475569", border:"#e2e8f0" },
 };
 
+/* ── Sidebar Nav Item ── */
+const NavItem = ({
+  icon: Icon, label, active, onClick, badge, collapsed,
+}: {
+  icon: any; label: string; active: boolean; onClick: () => void;
+  badge?: number; collapsed: boolean;
+}) => (
+  <button
+    onClick={onClick}
+    title={collapsed ? label : undefined}
+    style={{
+      width: "100%", display: "flex", alignItems: "center",
+      gap: collapsed ? 0 : 10,
+      justifyContent: collapsed ? "center" : "flex-start",
+      padding: collapsed ? "11px 0" : "11px 16px",
+      border: "none", borderRadius: 12, cursor: "pointer",
+      fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+      transition: "all .18s",
+      background: active ? TEAL : "transparent",
+      color: active ? "#fff" : "#64748b",
+      position: "relative",
+    }}
+  >
+    <Icon size={16} />
+    {!collapsed && <span style={{ flex: 1, textAlign: "left" }}>{label}</span>}
+    {!collapsed && badge != null && badge > 0 && (
+      <span style={{ background: "#f97316", color: "#fff", fontSize: 9, fontWeight: 800, padding: "1px 6px", borderRadius: 99 }}>{badge}</span>
+    )}
+    {collapsed && badge != null && badge > 0 && (
+      <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#f97316" }} />
+    )}
+  </button>
+);
+
 /* ══════════════════════════════════════════════════════════════ */
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
+  const [sidebarOpen,    setSidebarOpen]  = useState(true);
   const [tab,            setTab]          = useState<TabType>("overview");
   const [users,          setUsers]        = useState<ApiUser[]>([]);
   const [courses,        setCourses]      = useState<Course[]>([]);
@@ -84,6 +123,8 @@ export default function AdminDashboard() {
   const [viewReceipt,    setViewReceipt]  = useState<string | null>(null);
   const [rejectReason,   setRejectReason] = useState("");
   const [rejectingId,    setRejectingId]  = useState<number | null>(null);
+
+  const SW = sidebarOpen ? SIDEBAR_W : 64;
 
   /* ── fetch payments ── */
   const fetchPayments = useCallback(async () => {
@@ -228,10 +269,25 @@ export default function AdminDashboard() {
   const pendingCourses = courses.filter(c => !c.is_published);
   const loading = loadingUsers || loadingCourses;
 
+  const navItems: { key: TabType; label: string; icon: any; badge?: number }[] = [
+    { key: "overview",  label: "Overview",  icon: LayoutDashboard },
+    { key: "payments",  label: "Payments",  icon: CreditCard,  badge: stats.pendingPay },
+    { key: "users",     label: "Users",     icon: Users },
+    { key: "courses",   label: "Courses",   icon: BookOpen,    badge: pendingCourses.length },
+  ];
+
+  const pageTitle: Record<TabType, string> = {
+    overview: "Admin Dashboard",
+    payments: "Payments",
+    users:    "Users",
+    courses:  "Courses",
+  };
+
   /* ══ RENDER ══ */
   return (
-    <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
+    <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif", minHeight:"100vh", background:"#f6f8fb", display:"flex" }}>
       <style>{`
+        *{box-sizing:border-box;margin:0;padding:0;}
         .card{background:#fff;border-radius:16px;border:1px solid #e8edf2;}
         .btna{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;border-radius:99px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;transition:all .15s;white-space:nowrap;}
         .btna:hover{background:#a7f3d0;}
@@ -239,10 +295,6 @@ export default function AdminDashboard() {
         .btnr{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:99px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;transition:all .15s;white-space:nowrap;}
         .btnr:hover{background:#fecaca;}
         .btnr:disabled{opacity:.5;}
-        .ntab{border:none;background:transparent;cursor:pointer;font-family:inherit;border-radius:10px;transition:all .15s;display:flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap;padding:8px 14px;font-size:13px;}
-        .ntab.on{background:${NAVY};color:#fff;}
-        .ntab:not(.on){color:#64748b;}
-        .ntab:not(.on):hover{background:#f1f5f9;color:#334155;}
         .inp{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-family:inherit;color:${NAVY};outline:none;background:#fff;transition:border-color .2s;}
         .inp:focus{border-color:${TEAL};}
         .inp::placeholder{color:#94a3b8;}
@@ -254,13 +306,13 @@ export default function AdminDashboard() {
         .icn:disabled{opacity:.4;}
         .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;}
         .modal{background:#fff;border-radius:20px;padding:24px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;}
+        .sidebar{transition:width .22s cubic-bezier(.4,0,.2,1);overflow:hidden;flex-shrink:0;}
         @media(max-width:900px){
           .g4{grid-template-columns:repeat(2,1fr)!important;}
           .g2{grid-template-columns:1fr!important;}
           .hm{display:none!important;}
         }
         @media(max-width:560px){
-          .tab-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
           .pending-price{display:none!important;}
         }
       `}</style>
@@ -315,366 +367,393 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div style={{ maxWidth:1200, margin:"0 auto", padding:"24px 16px" }}>
+      {/* ══════════ SIDEBAR ══════════ */}
+      <aside className="sidebar" style={{ width: SW, background: "#fff", borderRight: "1px solid #e8edf2", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", zIndex: 40 }}>
+        {/* Logo placeholder */}
+        <div style={{ padding: sidebarOpen ? "18px 16px 14px" : "18px 0 14px", borderBottom: "1px solid #f1f5f9" }} />
 
-        {/* ── HEADER ── */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24, flexWrap:"wrap", gap:10 }}>
-          <div>
-            <h1 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:22, color:NAVY, marginBottom:3 }}>Admin Dashboard</h1>
-            <p style={{ color:"#64748b", fontSize:13 }}>Full control over users, courses & payments.</p>
+        {/* Nav links */}
+        <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
+          {navItems.map(({ key, label, icon, badge }) => (
+            <NavItem
+              key={key}
+              icon={icon}
+              label={label}
+              active={tab === key}
+              badge={badge}
+              collapsed={!sidebarOpen}
+              onClick={() => setTab(key)}
+            />
+          ))}
+        </nav>
+
+        {/* User + sign out */}
+        <div style={{ borderTop: "1px solid #f1f5f9", padding: sidebarOpen ? "12px 16px" : "12px 0", display: "flex", alignItems: "center", gap: sidebarOpen ? 10 : 0, justifyContent: sidebarOpen ? "flex-start" : "center" }}>
+          <UserAvatar name={user?.name} size={32} />
+          {sidebarOpen && (
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</p>
+              <button
+                onClick={() => { logout(); navigate("/"); }}
+                style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#94a3b8", fontFamily: "inherit", padding: 0 }}
+              >
+                <LogOut size={11} /> Sign out
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ══════════ MAIN ══════════ */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+
+        {/* Top bar */}
+        <header style={{ background: "#fff", borderBottom: "1px solid #e8edf2", position: "sticky", top: 0, zIndex: 30, height: 56, display: "flex", alignItems: "center", padding: "0 20px", gap: 14 }}>
+          <button
+            onClick={() => setSidebarOpen(o => !o)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8, color: "#64748b", display: "flex" }}
+          >
+            {sidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
+          </button>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: NAVY }}>
+              {pageTitle[tab]}
+            </h1>
           </div>
           <button
             onClick={() => { fetchUsers(); fetchCourses(); fetchPayments(); }}
-            style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 16px", border:"1px solid #e2e8f0", borderRadius:99, background:"#fff", cursor:"pointer", fontSize:12, fontWeight:600, color:"#64748b", fontFamily:"inherit" }}
+            style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 13px", border:"1px solid #e2e8f0", borderRadius:99, background:"#fff", cursor:"pointer", fontSize:11, fontWeight:600, color:"#64748b", fontFamily:"inherit" }}
           >
-            <RefreshCw size={12} /> Refresh
+            <RefreshCw size={11} /> Refresh
           </button>
-        </div>
+          <button style={{ background:"none", border:"none", cursor:"pointer", padding:6, color:"#64748b" }}><Bell size={17} /></button>
+        </header>
 
-        {/* ── STAT CARDS ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:24 }} className="g4">
-          {[
-            { label:"Total Users",      value:loading?"—":stats.totalUsers,                          icon:Users,       color:"#3b82f6", bg:"#3b82f615" },
-            { label:"Total Courses",    value:loading?"—":stats.totalCourses,                        icon:BookOpen,    color:TEAL,      bg:TEAL+"15" },
-            { label:"Total Enrollments",value:loading?"—":stats.enrollments.toLocaleString(),        icon:TrendingUp,  color:"#10b981", bg:"#10b98115" },
-            { label:"Confirmed Revenue",value:loading?"—":`₦${stats.revenue.toLocaleString()}`,     icon:DollarSign,  color:"#8b5cf6", bg:"#8b5cf615" },
-            { label:"Active Users",     value:loading?"—":stats.activeUsers,                        icon:CheckCircle, color:"#14b8a6", bg:"#14b8a615" },
-            { label:"Instructors",      value:loading?"—":stats.instructors,                        icon:ShieldCheck, color:"#6366f1", bg:"#6366f115" },
-            { label:"Live Courses",     value:loading?"—":stats.published,                          icon:Eye,         color:"#22c55e", bg:"#22c55e15" },
-            { label:"Pending Payments", value:loadingPayments?"—":stats.pendingPay,                 icon:Clock,       color:"#f97316", bg:"#f9731615" },
-          ].map(({ label, value, icon:Icon, color, bg }) => (
-            <div key={label} className="card" style={{ padding:16, display:"flex", alignItems:"center", gap:12 }}>
-              <div style={{ width:40, height:40, borderRadius:12, background:bg, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                <Icon size={17} style={{ color }} />
-              </div>
-              <div>
-                <p style={{ fontSize:11, color:"#94a3b8", fontWeight:500, marginBottom:2 }}>{label}</p>
-                <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:20, color:NAVY, lineHeight:1.1 }}>{value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Page content */}
+        <main style={{ flex: 1, padding: "24px 20px", maxWidth: 1100, width: "100%", margin: "0 auto" }}>
 
-        {/* ── TABS ── */}
-        <div className="tab-scroll" style={{ marginBottom:24 }}>
-          <div style={{ display:"flex", gap:4, background:"#fff", border:"1px solid #e8edf2", borderRadius:14, padding:5, width:"fit-content" }}>
-            {([
-              { key:"overview",  label:"Overview",  icon:<LayoutDashboard size={13}/> },
-              { key:"payments",  label:"Payments",  icon:<CreditCard size={13}/>,     badge:stats.pendingPay },
-              { key:"users",     label:"Users",     icon:<Users size={13}/> },
-              { key:"courses",   label:"Courses",   icon:<BookOpen size={13}/>,        badge:pendingCourses.length },
-            ] as const).map(({ key, label, icon, badge }) => (
-              <button key={key} onClick={() => setTab(key as TabType)} className={`ntab${tab===key?" on":""}`}>
-                {icon} {label}
-                {(badge ?? 0) > 0 && (
-                  <span style={{ background:"#f97316", color:"#fff", fontSize:9, fontWeight:800, padding:"1px 5px", borderRadius:99, marginLeft:2 }}>{badge}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+          {/* ════════ OVERVIEW ════════ */}
+          {tab === "overview" && (
+            <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
-        {/* ════════ OVERVIEW ════════ */}
-        {tab === "overview" && (
-          <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
-
-            {/* pending payments alert */}
-            {stats.pendingPay > 0 && (
-              <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:14, padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                  <AlertCircle size={16} style={{ color:"#f97316", flexShrink:0 }} />
-                  <div>
-                    <p style={{ fontWeight:700, fontSize:13, color:"#9a3412" }}>
-                      {stats.pendingPay} payment{stats.pendingPay>1?"s":""} awaiting review
-                    </p>
-                    <p style={{ fontSize:12, color:"#c2410c" }}>Students are waiting for course access</p>
+              {/* STAT CARDS */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }} className="g4">
+                {[
+                  { label:"Total Users",       value:loading?"—":stats.totalUsers,                       icon:Users,       color:"#3b82f6", bg:"#3b82f615" },
+                  { label:"Total Courses",     value:loading?"—":stats.totalCourses,                     icon:BookOpen,    color:TEAL,      bg:TEAL+"15" },
+                  { label:"Total Enrollments", value:loading?"—":stats.enrollments.toLocaleString(),     icon:TrendingUp,  color:"#10b981", bg:"#10b98115" },
+                  { label:"Confirmed Revenue", value:loading?"—":`₦${stats.revenue.toLocaleString()}`,  icon:DollarSign,  color:"#8b5cf6", bg:"#8b5cf615" },
+                  { label:"Active Users",      value:loading?"—":stats.activeUsers,                     icon:CheckCircle, color:"#14b8a6", bg:"#14b8a615" },
+                  { label:"Instructors",       value:loading?"—":stats.instructors,                     icon:ShieldCheck, color:"#6366f1", bg:"#6366f115" },
+                  { label:"Live Courses",      value:loading?"—":stats.published,                       icon:Eye,         color:"#22c55e", bg:"#22c55e15" },
+                  { label:"Pending Payments",  value:loadingPayments?"—":stats.pendingPay,              icon:Clock,       color:"#f97316", bg:"#f9731615" },
+                ].map(({ label, value, icon:Icon, color, bg }) => (
+                  <div key={label} className="card" style={{ padding:16, display:"flex", alignItems:"center", gap:12 }}>
+                    <div style={{ width:40, height:40, borderRadius:12, background:bg, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                      <Icon size={17} style={{ color }} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize:11, color:"#94a3b8", fontWeight:500, marginBottom:2 }}>{label}</p>
+                      <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:20, color:NAVY, lineHeight:1.1 }}>{value}</p>
+                    </div>
                   </div>
-                </div>
-                <button onClick={() => setTab("payments")} className="btna" style={{ background:TEAL, color:"#fff", border:"none" }}>
-                  Review Now
-                </button>
+                ))}
               </div>
-            )}
 
-            {/* pending courses */}
-            {pendingCourses.length > 0 && (
-              <div>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
-                  <Clock size={15} style={{ color:"#f97316" }} />
-                  <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:15, color:NAVY }}>Courses Pending Approval</h2>
-                  <span style={{ background:"#fef3c7", color:"#92400e", border:"1px solid #fde68a", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:99 }}>{pendingCourses.length}</span>
-                </div>
-                <div className="card" style={{ overflow:"hidden", borderColor:"#fed7aa" }}>
-                  <div style={{ background:"#fff7ed", padding:"10px 16px", borderBottom:"1px solid #fed7aa", display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:8 }}>
-                    {["COURSE","INSTRUCTOR","PRICE","ACTIONS"].map(h => (
-                      <p key={h} style={{ fontSize:11, fontWeight:700, color:"#92400e", textAlign:h==="ACTIONS"?"right":"left" }} className={h!=="COURSE"&&h!=="ACTIONS"?"hm":undefined}>{h}</p>
-                    ))}
-                  </div>
-                  {pendingCourses.map(c => (
-                    <div key={c.id} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:8, alignItems:"center", padding:"12px 16px", borderBottom:"1px solid #fff7ed" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                        <CourseThumb title={c.title} image={c.image} size={38} />
-                        <div style={{ minWidth:0 }}>
-                          <p style={{ fontWeight:700, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title ?? "No title"}</p>
-                          <p style={{ fontSize:10, color:"#94a3b8" }}>{c.category || "Uncategorised"}</p>
-                        </div>
-                      </div>
-                      <p style={{ fontSize:12, color:"#64748b" }} className="hm">{c.instructor || "—"}</p>
-                      <p style={{ fontSize:12, fontWeight:700, color:c.price===0?"#10b981":NAVY }} className="pending-price hm">
-                        {c.price===0 ? "Free" : `₦${c.price.toLocaleString()}`}
+              {/* pending payments alert */}
+              {stats.pendingPay > 0 && (
+                <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:14, padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <AlertCircle size={16} style={{ color:"#f97316", flexShrink:0 }} />
+                    <div>
+                      <p style={{ fontWeight:700, fontSize:13, color:"#9a3412" }}>
+                        {stats.pendingPay} payment{stats.pendingPay>1?"s":""} awaiting review
                       </p>
-                      <div style={{ display:"flex", gap:6, justifyContent:"flex-end" }}>
-                        <button onClick={() => handleCourseAction(c.id,"approved")} className="btna">
-                          <CheckCircle size={10}/> Approve
-                        </button>
-                        <button onClick={() => handleDeleteCourse(c.id, c.title ?? "this course")} disabled={deletingId===c.id} className="btnr">
-                          <XCircle size={10}/> Reject
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* live courses + recent signups */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }} className="g2">
-              <div>
-                <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:15, color:NAVY, marginBottom:14 }}>Live Courses</h2>
-                <div className="card" style={{ overflow:"hidden" }}>
-                  {loadingCourses ? [1,2,3].map(i => <SkeletonRow key={i} />) :
-                   courses.filter(c => c.is_published).length === 0 ? (
-                    <div style={{ padding:"48px 24px", textAlign:"center" }}><p style={{ color:"#94a3b8", fontSize:13 }}>No published courses yet.</p></div>
-                  ) : courses.filter(c => c.is_published).slice(0,6).map(c => (
-                    <div key={c.id} className="arow">
-                      <CourseThumb title={c.title} image={c.image} size={38} />
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <p style={{ fontWeight:700, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title}</p>
-                        <p style={{ fontSize:11, color:"#94a3b8" }}>{c.enrolled} students</p>
-                      </div>
-                      <div style={{ display:"flex", gap:4 }}>
-                        <button onClick={() => handleCourseAction(c.id,"rejected")} className="icn" title="Unpublish"><EyeOff size={13} style={{ color:"#64748b" }}/></button>
-                        <button onClick={() => handleDeleteCourse(c.id, c.title)} disabled={deletingId===c.id} className="icn"><Trash2 size={13} style={{ color:"#ef4444" }}/></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:15, color:NAVY, marginBottom:14 }}>Recent Signups</h2>
-                <div className="card" style={{ overflow:"hidden" }}>
-                  {loadingUsers ? [1,2,3,4,5].map(i => <SkeletonRow key={i}/>) :
-                   users.slice(0,6).map((u, i, arr) => (
-                    <div key={u.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 14px", borderBottom:i<arr.length-1?"1px solid #f8fafc":"none" }}>
-                      <UserAvatar name={u.name} size={32} />
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <p style={{ fontSize:13, fontWeight:600, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name}</p>
-                        <p style={{ fontSize:11, color:"#94a3b8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.email}</p>
-                      </div>
-                      <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:99, background:roleStyle[u.role]?.bg, color:roleStyle[u.role]?.color, border:`1px solid ${roleStyle[u.role]?.border}`, textTransform:"capitalize", flexShrink:0 }}>{u.role}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ════════ PAYMENTS ════════ */}
-        {tab === "payments" && (
-          <div>
-            <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
-              <div style={{ flex:1, minWidth:200, position:"relative" }}>
-                <Search size={13} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#94a3b8" }}/>
-                <input className="inp" value={paySearch} onChange={e => setPaySearch(e.target.value)} placeholder="Search by student or course…" style={{ paddingLeft:36 }} />
-              </div>
-              <select className="inp" value={payFilter} onChange={e => setPayFilter(e.target.value)} style={{ width:"auto", minWidth:140 }}>
-                <option value="all">All Payments</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-              <p style={{ fontSize:12, color:"#94a3b8", flexShrink:0 }}>{filteredPayments.length} payments</p>
-            </div>
-
-            <div className="card" style={{ overflow:"hidden" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 90px 140px", gap:8, padding:"10px 16px", background:"#f8fafc", borderBottom:"1px solid #e8edf2" }}>
-                {["STUDENT","COURSE","AMOUNT","STATUS","ACTIONS"].map((h,i) => (
-                  <p key={i} style={{ fontSize:11, fontWeight:700, color:"#94a3b8", textAlign:h==="ACTIONS"?"right":"left" }} className={h==="COURSE"?"hm":undefined}>{h}</p>
-                ))}
-              </div>
-
-              {loadingPayments ? [1,2,3,4].map(i => <SkeletonRow key={i}/>) :
-               filteredPayments.length === 0 ? (
-                <div style={{ padding:"56px 24px", textAlign:"center" }}>
-                  <CreditCard size={32} style={{ color:"#cbd5e1", margin:"0 auto 10px" }} />
-                  <p style={{ color:"#94a3b8" }}>No payments found.</p>
-                </div>
-               ) : filteredPayments.map(p => (
-                <div key={p.id} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 90px 140px", gap:8, alignItems:"center", padding:"12px 16px", borderBottom:"1px solid #f8fafc", transition:"background .15s" }}
-                  onMouseEnter={e => (e.currentTarget.style.background="#fafcff")}
-                  onMouseLeave={e => (e.currentTarget.style.background="")}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8, minWidth:0 }}>
-                    <UserAvatar name={p.user_name} size={30} />
-                    <div style={{ minWidth:0 }}>
-                      <p style={{ fontWeight:600, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.user_name || "—"}</p>
-                      <p style={{ fontSize:11, color:"#94a3b8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.user_email}</p>
+                      <p style={{ fontSize:12, color:"#c2410c" }}>Students are waiting for course access</p>
                     </div>
                   </div>
-                  <p style={{ fontSize:12, color:"#64748b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} className="hm">{p.course_title || "—"}</p>
-                  <p style={{ fontSize:13, fontWeight:700, color:NAVY }}>₦{p.amount?.toLocaleString()}</p>
-                  <span style={{
-                    fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:99, whiteSpace:"nowrap",
-                    background: p.status==="approved" ? "#d1fae5" : p.status==="rejected" ? "#fee2e2" : "#fef3c7",
-                    color: p.status==="approved" ? "#065f46" : p.status==="rejected" ? "#991b1b" : "#92400e",
-                    border: `1px solid ${p.status==="approved" ? "#a7f3d0" : p.status==="rejected" ? "#fecaca" : "#fde68a"}`,
-                  }}>
-                    {p.status.charAt(0).toUpperCase()+p.status.slice(1)}
-                  </span>
-                  <div style={{ display:"flex", gap:4, justifyContent:"flex-end" }}>
-                    {p.proof_image && (
-                      <button
-                        onClick={() => setViewReceipt(p.proof_image)}
-                        className="icn"
-                        title="View receipt"
-                      >
-                        <ImageIcon size={13} style={{ color:"#3b82f6" }}/>
-                      </button>
-                    )}
-                    {p.status === "pending" && (
-                      <>
-                        <button onClick={() => approvePayment(p)} disabled={actioningPay===p.id} className="btna">
-                          <CheckCircle size={10}/> Approve
-                        </button>
-                        <button onClick={() => setRejectingId(p.id)} disabled={actioningPay===p.id} className="btnr">
-                          <XCircle size={10}/> Reject
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ════════ USERS ════════ */}
-        {tab === "users" && (
-          <div>
-            <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
-              <div style={{ flex:1, minWidth:200, position:"relative" }}>
-                <Search size={13} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#94a3b8" }}/>
-                <input className="inp" value={userSearch} onChange={e => setUserSearch(e.target.value)} placeholder="Search by name or email…" style={{ paddingLeft:36 }} />
-              </div>
-              <select className="inp" value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ width:"auto", minWidth:130 }}>
-                <option value="all">All Roles</option>
-                <option value="student">Students</option>
-                <option value="instructor">Instructors</option>
-                <option value="admin">Admins</option>
-              </select>
-              <p style={{ fontSize:12, color:"#94a3b8", flexShrink:0 }}>{filteredUsers.length}/{users.length}</p>
-            </div>
-
-            <div className="card" style={{ overflow:"hidden" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 40px", gap:8, padding:"10px 16px", background:"#f8fafc", borderBottom:"1px solid #e8edf2" }}>
-                {["USER","JOINED","ROLE","STATUS",""].map((h,i) => (
-                  <p key={i} style={{ fontSize:11, fontWeight:700, color:"#94a3b8" }} className={h==="JOINED"?"hm":undefined}>{h}</p>
-                ))}
-              </div>
-              {loadingUsers ? [1,2,3,4,5].map(i => <SkeletonRow key={i}/>) :
-               filteredUsers.length === 0 ? (
-                <div style={{ padding:"56px 24px", textAlign:"center" }}><p style={{ color:"#94a3b8" }}>No users found.</p></div>
-               ) : filteredUsers.map(u => (
-                <div key={u.id} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 40px", gap:8, alignItems:"center", padding:"12px 16px", borderBottom:"1px solid #f8fafc", transition:"background .15s" }}
-                  onMouseEnter={e => (e.currentTarget.style.background="#fafcff")}
-                  onMouseLeave={e => (e.currentTarget.style.background="")}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                    <UserAvatar name={u.name} size={32} />
-                    <div style={{ minWidth:0 }}>
-                      <p style={{ fontWeight:600, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name}</p>
-                      <p style={{ fontSize:11, color:"#94a3b8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.email}</p>
-                    </div>
-                  </div>
-                  <p style={{ fontSize:12, color:"#94a3b8" }} className="hm">
-                    {new Date(u.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"2-digit"})}
-                  </p>
-                  <div>
-                    <select value={u.role} onChange={e => changeRole(u.id, e.target.value as ApiUser["role"])}
-                      style={{ fontSize:12, border:"1px solid #e2e8f0", borderRadius:8, padding:"4px 8px", background:"#fff", color:NAVY, fontFamily:"inherit", cursor:"pointer", outline:"none" }}>
-                      <option value="student">Student</option>
-                      <option value="instructor">Instructor</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                  <div>
-                    <span style={{ fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:99, background:u.is_active?"#d1fae5":"#fee2e2", color:u.is_active?"#065f46":"#991b1b", border:`1px solid ${u.is_active?"#a7f3d0":"#fecaca"}` }}>
-                      {u.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <button onClick={() => toggleUserActive(u)} className="icn">
-                    {u.is_active
-                      ? <ToggleRight size={20} style={{ color:"#10b981" }}/>
-                      : <ToggleLeft  size={20} style={{ color:"#cbd5e1" }}/>}
+                  <button onClick={() => setTab("payments")} className="btna" style={{ background:TEAL, color:"#fff", border:"none" }}>
+                    Review Now
                   </button>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              )}
 
-        {/* ════════ COURSES ════════ */}
-        {tab === "courses" && (
-          <div>
-            <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
-              <div style={{ flex:1, minWidth:200, position:"relative" }}>
-                <Search size={13} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#94a3b8" }}/>
-                <input className="inp" value={courseSearch} onChange={e => setCourseSearch(e.target.value)} placeholder="Search by course, instructor or category…" style={{ paddingLeft:36 }} />
-              </div>
-              <p style={{ fontSize:12, color:"#94a3b8", flexShrink:0 }}>{filteredCourses.length}/{courses.length}</p>
-            </div>
-
-            <div className="card" style={{ overflow:"hidden" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 80px 80px 90px 80px", gap:8, padding:"10px 16px", background:"#f8fafc", borderBottom:"1px solid #e8edf2" }}>
-                {["COURSE","INSTRUCTOR","PRICE","STUDENTS","STATUS","ACTIONS"].map((h,i) => (
-                  <p key={i} style={{ fontSize:11, fontWeight:700, color:"#94a3b8", textAlign:h==="ACTIONS"?"right":"left" }} className={h==="INSTRUCTOR"||h==="STUDENTS"?"hm":undefined}>{h}</p>
-                ))}
-              </div>
-              {loadingCourses ? [1,2,3,4].map(i => <SkeletonRow key={i}/>) :
-               filteredCourses.length === 0 ? (
-                <div style={{ padding:"56px 24px", textAlign:"center" }}><p style={{ color:"#94a3b8" }}>No courses found.</p></div>
-               ) : filteredCourses.map(c => (
-                <div key={c.id} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 80px 80px 90px 80px", gap:8, alignItems:"center", padding:"12px 16px", borderBottom:"1px solid #f8fafc", transition:"background .15s" }}
-                  onMouseEnter={e => (e.currentTarget.style.background="#fafcff")}
-                  onMouseLeave={e => (e.currentTarget.style.background="")}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                    <CourseThumb title={c.title} image={c.image} size={40} />
-                    <div style={{ minWidth:0 }}>
-                      <p style={{ fontWeight:700, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title ?? "No title"}</p>
-                      <p style={{ fontSize:11, color:"#94a3b8" }}>{c.category || "—"}</p>
-                    </div>
+              {/* pending courses */}
+              {pendingCourses.length > 0 && (
+                <div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                    <Clock size={15} style={{ color:"#f97316" }} />
+                    <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:15, color:NAVY }}>Courses Pending Approval</h2>
+                    <span style={{ background:"#fef3c7", color:"#92400e", border:"1px solid #fde68a", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:99 }}>{pendingCourses.length}</span>
                   </div>
-                  <p style={{ fontSize:12, color:"#64748b" }} className="hm">{c.instructor || "—"}</p>
-                  <p style={{ fontSize:13, fontWeight:700, color:c.price===0?"#10b981":NAVY }}>
-                    {c.price===0 ? "Free" : `₦${c.price.toLocaleString()}`}
-                  </p>
-                  <p style={{ fontSize:12, color:"#64748b" }} className="hm">{c.enrolled}</p>
-                  <span style={{ fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:99, background:c.is_published?"#d1fae5":"#fef3c7", color:c.is_published?"#065f46":"#92400e", border:`1px solid ${c.is_published?"#a7f3d0":"#fde68a"}`, whiteSpace:"nowrap" }}>
-                    {c.is_published ? "Live" : "Pending"}
-                  </span>
-                  <div style={{ display:"flex", gap:4, justifyContent:"flex-end" }}>
-                    <button onClick={() => handleCourseAction(c.id, c.is_published?"rejected":"approved")} className="icn" title={c.is_published?"Unpublish":"Approve"}>
-                      {c.is_published ? <Eye size={13} style={{ color:"#10b981" }}/> : <EyeOff size={13} style={{ color:"#64748b" }}/>}
-                    </button>
-                    <button onClick={() => handleDeleteCourse(c.id, c.title??"")} disabled={deletingId===c.id} className="icn">
-                      <Trash2 size={13} style={{ color:"#ef4444" }}/>
-                    </button>
+                  <div className="card" style={{ overflow:"hidden", borderColor:"#fed7aa" }}>
+                    <div style={{ background:"#fff7ed", padding:"10px 16px", borderBottom:"1px solid #fed7aa", display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:8 }}>
+                      {["COURSE","INSTRUCTOR","PRICE","ACTIONS"].map(h => (
+                        <p key={h} style={{ fontSize:11, fontWeight:700, color:"#92400e", textAlign:h==="ACTIONS"?"right":"left" }} className={h!=="COURSE"&&h!=="ACTIONS"?"hm":undefined}>{h}</p>
+                      ))}
+                    </div>
+                    {pendingCourses.map(c => (
+                      <div key={c.id} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:8, alignItems:"center", padding:"12px 16px", borderBottom:"1px solid #fff7ed" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+                          <CourseThumb title={c.title} image={c.image} size={38} />
+                          <div style={{ minWidth:0 }}>
+                            <p style={{ fontWeight:700, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title ?? "No title"}</p>
+                            <p style={{ fontSize:10, color:"#94a3b8" }}>{c.category || "Uncategorised"}</p>
+                          </div>
+                        </div>
+                        <p style={{ fontSize:12, color:"#64748b" }} className="hm">{c.instructor || "—"}</p>
+                        <p style={{ fontSize:12, fontWeight:700, color:c.price===0?"#10b981":NAVY }} className="pending-price hm">
+                          {c.price===0 ? "Free" : `₦${c.price.toLocaleString()}`}
+                        </p>
+                        <div style={{ display:"flex", gap:6, justifyContent:"flex-end" }}>
+                          <button onClick={() => handleCourseAction(c.id,"approved")} className="btna">
+                            <CheckCircle size={10}/> Approve
+                          </button>
+                          <button onClick={() => handleDeleteCourse(c.id, c.title ?? "this course")} disabled={deletingId===c.id} className="btnr">
+                            <XCircle size={10}/> Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              )}
 
+              {/* live courses + recent signups */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }} className="g2">
+                <div>
+                  <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:15, color:NAVY, marginBottom:14 }}>Live Courses</h2>
+                  <div className="card" style={{ overflow:"hidden" }}>
+                    {loadingCourses ? [1,2,3].map(i => <SkeletonRow key={i} />) :
+                     courses.filter(c => c.is_published).length === 0 ? (
+                      <div style={{ padding:"48px 24px", textAlign:"center" }}><p style={{ color:"#94a3b8", fontSize:13 }}>No published courses yet.</p></div>
+                    ) : courses.filter(c => c.is_published).slice(0,6).map(c => (
+                      <div key={c.id} className="arow">
+                        <CourseThumb title={c.title} image={c.image} size={38} />
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontWeight:700, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title}</p>
+                          <p style={{ fontSize:11, color:"#94a3b8" }}>{c.enrolled} students</p>
+                        </div>
+                        <div style={{ display:"flex", gap:4 }}>
+                          <button onClick={() => handleCourseAction(c.id,"rejected")} className="icn" title="Unpublish"><EyeOff size={13} style={{ color:"#64748b" }}/></button>
+                          <button onClick={() => handleDeleteCourse(c.id, c.title)} disabled={deletingId===c.id} className="icn"><Trash2 size={13} style={{ color:"#ef4444" }}/></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:15, color:NAVY, marginBottom:14 }}>Recent Signups</h2>
+                  <div className="card" style={{ overflow:"hidden" }}>
+                    {loadingUsers ? [1,2,3,4,5].map(i => <SkeletonRow key={i}/>) :
+                     users.slice(0,6).map((u, i, arr) => (
+                      <div key={u.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 14px", borderBottom:i<arr.length-1?"1px solid #f8fafc":"none" }}>
+                        <UserAvatar name={u.name} size={32} />
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontSize:13, fontWeight:600, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name}</p>
+                          <p style={{ fontSize:11, color:"#94a3b8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.email}</p>
+                        </div>
+                        <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:99, background:roleStyle[u.role]?.bg, color:roleStyle[u.role]?.color, border:`1px solid ${roleStyle[u.role]?.border}`, textTransform:"capitalize", flexShrink:0 }}>{u.role}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════ PAYMENTS ════════ */}
+          {tab === "payments" && (
+            <div>
+              <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
+                <div style={{ flex:1, minWidth:200, position:"relative" }}>
+                  <Search size={13} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#94a3b8" }}/>
+                  <input className="inp" value={paySearch} onChange={e => setPaySearch(e.target.value)} placeholder="Search by student or course…" style={{ paddingLeft:36 }} />
+                </div>
+                <select className="inp" value={payFilter} onChange={e => setPayFilter(e.target.value)} style={{ width:"auto", minWidth:140 }}>
+                  <option value="all">All Payments</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <p style={{ fontSize:12, color:"#94a3b8", flexShrink:0 }}>{filteredPayments.length} payments</p>
+              </div>
+
+              <div className="card" style={{ overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 90px 140px", gap:8, padding:"10px 16px", background:"#f8fafc", borderBottom:"1px solid #e8edf2" }}>
+                  {["STUDENT","COURSE","AMOUNT","STATUS","ACTIONS"].map((h,i) => (
+                    <p key={i} style={{ fontSize:11, fontWeight:700, color:"#94a3b8", textAlign:h==="ACTIONS"?"right":"left" }} className={h==="COURSE"?"hm":undefined}>{h}</p>
+                  ))}
+                </div>
+
+                {loadingPayments ? [1,2,3,4].map(i => <SkeletonRow key={i}/>) :
+                 filteredPayments.length === 0 ? (
+                  <div style={{ padding:"56px 24px", textAlign:"center" }}>
+                    <CreditCard size={32} style={{ color:"#cbd5e1", margin:"0 auto 10px" }} />
+                    <p style={{ color:"#94a3b8" }}>No payments found.</p>
+                  </div>
+                 ) : filteredPayments.map(p => (
+                  <div key={p.id} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 90px 140px", gap:8, alignItems:"center", padding:"12px 16px", borderBottom:"1px solid #f8fafc", transition:"background .15s" }}
+                    onMouseEnter={e => (e.currentTarget.style.background="#fafcff")}
+                    onMouseLeave={e => (e.currentTarget.style.background="")}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, minWidth:0 }}>
+                      <UserAvatar name={p.user_name} size={30} />
+                      <div style={{ minWidth:0 }}>
+                        <p style={{ fontWeight:600, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.user_name || "—"}</p>
+                        <p style={{ fontSize:11, color:"#94a3b8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.user_email}</p>
+                      </div>
+                    </div>
+                    <p style={{ fontSize:12, color:"#64748b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} className="hm">{p.course_title || "—"}</p>
+                    <p style={{ fontSize:13, fontWeight:700, color:NAVY }}>₦{p.amount?.toLocaleString()}</p>
+                    <span style={{
+                      fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:99, whiteSpace:"nowrap",
+                      background: p.status==="approved" ? "#d1fae5" : p.status==="rejected" ? "#fee2e2" : "#fef3c7",
+                      color: p.status==="approved" ? "#065f46" : p.status==="rejected" ? "#991b1b" : "#92400e",
+                      border: `1px solid ${p.status==="approved" ? "#a7f3d0" : p.status==="rejected" ? "#fecaca" : "#fde68a"}`,
+                    }}>
+                      {p.status.charAt(0).toUpperCase()+p.status.slice(1)}
+                    </span>
+                    <div style={{ display:"flex", gap:4, justifyContent:"flex-end" }}>
+                      {p.proof_image && (
+                        <button onClick={() => setViewReceipt(p.proof_image)} className="icn" title="View receipt">
+                          <ImageIcon size={13} style={{ color:"#3b82f6" }}/>
+                        </button>
+                      )}
+                      {p.status === "pending" && (
+                        <>
+                          <button onClick={() => approvePayment(p)} disabled={actioningPay===p.id} className="btna">
+                            <CheckCircle size={10}/> Approve
+                          </button>
+                          <button onClick={() => setRejectingId(p.id)} disabled={actioningPay===p.id} className="btnr">
+                            <XCircle size={10}/> Reject
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ════════ USERS ════════ */}
+          {tab === "users" && (
+            <div>
+              <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
+                <div style={{ flex:1, minWidth:200, position:"relative" }}>
+                  <Search size={13} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#94a3b8" }}/>
+                  <input className="inp" value={userSearch} onChange={e => setUserSearch(e.target.value)} placeholder="Search by name or email…" style={{ paddingLeft:36 }} />
+                </div>
+                <select className="inp" value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ width:"auto", minWidth:130 }}>
+                  <option value="all">All Roles</option>
+                  <option value="student">Students</option>
+                  <option value="instructor">Instructors</option>
+                  <option value="admin">Admins</option>
+                </select>
+                <p style={{ fontSize:12, color:"#94a3b8", flexShrink:0 }}>{filteredUsers.length}/{users.length}</p>
+              </div>
+
+              <div className="card" style={{ overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 40px", gap:8, padding:"10px 16px", background:"#f8fafc", borderBottom:"1px solid #e8edf2" }}>
+                  {["USER","JOINED","ROLE","STATUS",""].map((h,i) => (
+                    <p key={i} style={{ fontSize:11, fontWeight:700, color:"#94a3b8" }} className={h==="JOINED"?"hm":undefined}>{h}</p>
+                  ))}
+                </div>
+                {loadingUsers ? [1,2,3,4,5].map(i => <SkeletonRow key={i}/>) :
+                 filteredUsers.length === 0 ? (
+                  <div style={{ padding:"56px 24px", textAlign:"center" }}><p style={{ color:"#94a3b8" }}>No users found.</p></div>
+                 ) : filteredUsers.map(u => (
+                  <div key={u.id} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 40px", gap:8, alignItems:"center", padding:"12px 16px", borderBottom:"1px solid #f8fafc", transition:"background .15s" }}
+                    onMouseEnter={e => (e.currentTarget.style.background="#fafcff")}
+                    onMouseLeave={e => (e.currentTarget.style.background="")}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+                      <UserAvatar name={u.name} size={32} />
+                      <div style={{ minWidth:0 }}>
+                        <p style={{ fontWeight:600, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name}</p>
+                        <p style={{ fontSize:11, color:"#94a3b8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.email}</p>
+                      </div>
+                    </div>
+                    <p style={{ fontSize:12, color:"#94a3b8" }} className="hm">
+                      {new Date(u.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"2-digit"})}
+                    </p>
+                    <div>
+                      <select value={u.role} onChange={e => changeRole(u.id, e.target.value as ApiUser["role"])}
+                        style={{ fontSize:12, border:"1px solid #e2e8f0", borderRadius:8, padding:"4px 8px", background:"#fff", color:NAVY, fontFamily:"inherit", cursor:"pointer", outline:"none" }}>
+                        <option value="student">Student</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <div>
+                      <span style={{ fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:99, background:u.is_active?"#d1fae5":"#fee2e2", color:u.is_active?"#065f46":"#991b1b", border:`1px solid ${u.is_active?"#a7f3d0":"#fecaca"}` }}>
+                        {u.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <button onClick={() => toggleUserActive(u)} className="icn">
+                      {u.is_active
+                        ? <ToggleRight size={20} style={{ color:"#10b981" }}/>
+                        : <ToggleLeft  size={20} style={{ color:"#cbd5e1" }}/>}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ════════ COURSES ════════ */}
+          {tab === "courses" && (
+            <div>
+              <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
+                <div style={{ flex:1, minWidth:200, position:"relative" }}>
+                  <Search size={13} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#94a3b8" }}/>
+                  <input className="inp" value={courseSearch} onChange={e => setCourseSearch(e.target.value)} placeholder="Search by course, instructor or category…" style={{ paddingLeft:36 }} />
+                </div>
+                <p style={{ fontSize:12, color:"#94a3b8", flexShrink:0 }}>{filteredCourses.length}/{courses.length}</p>
+              </div>
+
+              <div className="card" style={{ overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 80px 80px 90px 80px", gap:8, padding:"10px 16px", background:"#f8fafc", borderBottom:"1px solid #e8edf2" }}>
+                  {["COURSE","INSTRUCTOR","PRICE","STUDENTS","STATUS","ACTIONS"].map((h,i) => (
+                    <p key={i} style={{ fontSize:11, fontWeight:700, color:"#94a3b8", textAlign:h==="ACTIONS"?"right":"left" }} className={h==="INSTRUCTOR"||h==="STUDENTS"?"hm":undefined}>{h}</p>
+                  ))}
+                </div>
+                {loadingCourses ? [1,2,3,4].map(i => <SkeletonRow key={i}/>) :
+                 filteredCourses.length === 0 ? (
+                  <div style={{ padding:"56px 24px", textAlign:"center" }}><p style={{ color:"#94a3b8" }}>No courses found.</p></div>
+                 ) : filteredCourses.map(c => (
+                  <div key={c.id} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 80px 80px 90px 80px", gap:8, alignItems:"center", padding:"12px 16px", borderBottom:"1px solid #f8fafc", transition:"background .15s" }}
+                    onMouseEnter={e => (e.currentTarget.style.background="#fafcff")}
+                    onMouseLeave={e => (e.currentTarget.style.background="")}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+                      <CourseThumb title={c.title} image={c.image} size={40} />
+                      <div style={{ minWidth:0 }}>
+                        <p style={{ fontWeight:700, fontSize:13, color:NAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title ?? "No title"}</p>
+                        <p style={{ fontSize:11, color:"#94a3b8" }}>{c.category || "—"}</p>
+                      </div>
+                    </div>
+                    <p style={{ fontSize:12, color:"#64748b" }} className="hm">{c.instructor || "—"}</p>
+                    <p style={{ fontSize:13, fontWeight:700, color:c.price===0?"#10b981":NAVY }}>
+                      {c.price===0 ? "Free" : `₦${c.price.toLocaleString()}`}
+                    </p>
+                    <p style={{ fontSize:12, color:"#64748b" }} className="hm">{c.enrolled}</p>
+                    <span style={{ fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:99, background:c.is_published?"#d1fae5":"#fef3c7", color:c.is_published?"#065f46":"#92400e", border:`1px solid ${c.is_published?"#a7f3d0":"#fde68a"}`, whiteSpace:"nowrap" }}>
+                      {c.is_published ? "Live" : "Pending"}
+                    </span>
+                    <div style={{ display:"flex", gap:4, justifyContent:"flex-end" }}>
+                      <button onClick={() => handleCourseAction(c.id, c.is_published?"rejected":"approved")} className="icn" title={c.is_published?"Unpublish":"Approve"}>
+                        {c.is_published ? <Eye size={13} style={{ color:"#10b981" }}/> : <EyeOff size={13} style={{ color:"#64748b" }}/>}
+                      </button>
+                      <button onClick={() => handleDeleteCourse(c.id, c.title??"")} disabled={deletingId===c.id} className="icn">
+                        <Trash2 size={13} style={{ color:"#ef4444" }}/>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </main>
       </div>
     </div>
   );
