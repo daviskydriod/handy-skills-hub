@@ -345,11 +345,7 @@ export default function InstructorDashboard() {
       <aside className="sidebar" style={{ width: SW, background: "#fff", borderRight: "1px solid #e8edf2", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", zIndex: 40 }}>
         {/* Logo */}
         <div style={{ padding: sidebarOpen ? "18px 16px 14px" : "18px 0 14px", display: "flex", alignItems: "center", gap: sidebarOpen ? 10 : 0, justifyContent: sidebarOpen ? "flex-start" : "center", borderBottom: "1px solid #f1f5f9" }}>
-          <img src={logo} alt="HandyGidi" style={{ width: 34, height: 34, borderRadius: 10, objectFit: "contain", border: "2px solid #EAB30840", flexShrink: 0 }} />
-          {sidebarOpen && (
-            <div style={{ overflow: "hidden" }}>
-              <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 14, color: NAVY, lineHeight: 1.1, whiteSpace: "nowrap" }}>HandyGidi</p>
-              <p style={{ fontSize: 10, fontWeight: 600, color: "#CA8A04", lineHeight: 1, whiteSpace: "nowrap" }}>Training Centre</p>
+        
             </div>
           )}
         </div>
