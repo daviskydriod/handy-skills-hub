@@ -11,7 +11,6 @@ import { useAuth } from "@/context/AuthContext";
 import { getMyEnrollments, type EnrolledCourse } from "@/api/enrollments";
 import { getCourses, type Course } from "@/api/courses";
 import client from "@/api/client";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
@@ -307,7 +306,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   );
 
   return (
-    <DashboardLayout>
+   
     <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
       <style>{`
         .card{background:#fff;border-radius:16px;border:1px solid #e8edf2;}
@@ -604,6 +603,6 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
         )}
       </div>
     </div>
-    </DashboardLayout>
+ 
   );
 }
