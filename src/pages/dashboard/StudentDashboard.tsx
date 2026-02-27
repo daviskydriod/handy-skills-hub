@@ -1,4 +1,5 @@
 // File: src/pages/dashboard/StudentDashboard.tsx
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,6 +14,20 @@ import { useAuth } from "@/context/AuthContext";
 import { getMyEnrollments, type EnrolledCourse } from "@/api/enrollments";
 import { getCourses, type Course } from "@/api/courses";
 import { submitPayment, getMyPayments, type Payment } from "@/api/payments";
+
+
+const location = useLocation();
+
+useEffect(() => {
+  if (!isAuthenticated) return;
+  // Fires on every navigation TO this page, with a short delay
+  // to allow the player's 2-second debounced sync to complete
+  const timer = setTimeout(() => {
+    fetchEnrolled();
+    fetchPayments();
+  }, 600);
+  return () => clearTimeout(timer);
+}, [location, isAuthenticated, fetchEnrolled, fetchPayments]);
 
 // ── Theme ─────────────────────────────────────────────────────────────
 // ✅ FIX: TEAL was incorrectly set to "#0b1f3a" (navy). Corrected to teal.
