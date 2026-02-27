@@ -21,24 +21,6 @@ const NAVY  = "#0b1f3a";
 
 
 
-
-// Add this useEffect to StudentCoursePlayer.tsx
-useEffect(() => {
-  return () => {
-    // Flush any pending sync immediately on unmount (navigating away)
-    if (syncTimer.current) {
-      clearTimeout(syncTimer.current);
-      // Fire immediately
-      if (userId && courseId && totalLessons > 0) {
-        const pct = Math.round((done.size / totalLessons) * 100);
-        updateProgress(Number(courseId), pct, pct === 100).catch(() => {});
-      }
-    }
-  };
-}, [done, userId, courseId, totalLessons]);
-
-
-
 // ── YouTube helper ────────────────────────────────────────────────────
 function getYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -189,6 +171,23 @@ export default function StudentCoursePlayer() {
     });
   }, [userId, courseId, syncToApi]);
 
+
+  // Add this useEffect to StudentCoursePlayer.tsx
+useEffect(() => {
+  return () => {
+    // Flush any pending sync immediately on unmount (navigating away)
+    if (syncTimer.current) {
+      clearTimeout(syncTimer.current);
+      // Fire immediately
+      if (userId && courseId && totalLessons > 0) {
+        const pct = Math.round((done.size / totalLessons) * 100);
+        updateProgress(Number(courseId), pct, pct === 100).catch(() => {});
+      }
+    }
+  };
+}, [done, userId, courseId, totalLessons]);
+
+
   const goToLesson = (pi: number, mi: number, li: number) => {
     setActivePart(pi); setActiveMod(mi); setActiveLesson(li);
     setCollapsedParts(p => ({ ...p, [pi]: false }));
@@ -322,7 +321,7 @@ export default function StudentCoursePlayer() {
               <div style={{ position: "relative", paddingTop: "min(56.25%, 72vh)" }}>
                 <iframe
                   key={`${activePart}-${activeMod}-${activeLesson}`}
-                  src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
+                  src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&iv_load_policy=3&playsinline=1`}
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
