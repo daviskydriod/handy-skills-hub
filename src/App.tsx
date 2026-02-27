@@ -18,6 +18,9 @@ import Login        from "./pages/Login";
 import Register     from "./pages/Register";
 import NotFound     from "./pages/NotFound";
 
+// Pages — course player (full-screen, no DashboardLayout)
+import StudentCoursePlayer from "./pages/StudentCoursePlayer";
+
 // Pages — dashboards
 import StudentDashboard    from "./pages/dashboard/StudentDashboard";
 import InstructorDashboard from "./pages/dashboard/InstructorDashboard";
@@ -49,20 +52,36 @@ const App = () => (
             <Route path="/login"       element={<Login />} />
             <Route path="/register"    element={<Register />} />
 
-            {/* ── Student ────────────────────────────────────────── */}
+            {/* ── Course Player ───────────────────────────────────
+                Full-screen dark UI — NO DashboardLayout wrapper.
+                StudentCoursePlayer has its own header and sidebar. */}
+            <Route path="/learn/:id" element={
+              <ProtectedRoute>
+                <StudentCoursePlayer />
+              </ProtectedRoute>
+            } />
+
+            {/* ── Student ─────────────────────────────────────────
+                StudentDashboard has its own built-in sidebar now.
+                Remove DashboardLayout to avoid double sidebars.    */}
             <Route path="/dashboard/student" element={
               <ProtectedRoute>
-                <DashboardLayout><StudentDashboard /></DashboardLayout>
+                <StudentDashboard />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/my-courses" element={
               <ProtectedRoute>
-                <DashboardLayout><StudentDashboard defaultTab="my-courses" /></DashboardLayout>
+                <StudentDashboard defaultTab="my-courses" />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/explore" element={
               <ProtectedRoute>
-                <DashboardLayout><StudentDashboard defaultTab="explore" /></DashboardLayout>
+                <StudentDashboard defaultTab="explore" />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/payments" element={
+              <ProtectedRoute>
+                <StudentDashboard defaultTab="payments" />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificates" element={
@@ -81,10 +100,12 @@ const App = () => (
               </ProtectedRoute>
             } />
 
-            {/* ── Instructor ─────────────────────────────────────── */}
+            {/* ── Instructor ──────────────────────────────────────
+                InstructorDashboard also has its own sidebar,
+                so remove DashboardLayout here too.               */}
             <Route path="/dashboard/instructor" element={
               <ProtectedRoute>
-                <DashboardLayout><InstructorDashboard /></DashboardLayout>
+                <InstructorDashboard />
               </ProtectedRoute>
             } />
 
