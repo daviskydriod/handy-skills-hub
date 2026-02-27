@@ -230,7 +230,6 @@ export default function AdminDashboard() {
 
   /* ══ RENDER ══ */
   return (
-    <DashboardLayout>
     <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
       <style>{`
         .card{background:#fff;border-radius:16px;border:1px solid #e8edf2;}
@@ -266,7 +265,7 @@ export default function AdminDashboard() {
         }
       `}</style>
 
-      {/* ── Modals (outside scroll container) ── */}
+      {/* ── Receipt modal ── */}
       {viewReceipt && (
         <div className="modal-overlay" onClick={() => setViewReceipt(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -678,6 +677,5 @@ export default function AdminDashboard() {
 
       </div>
     </div>
-
   );
 }
