@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DashboardLayout from "./components/layout/DashboardLayout";
 
 // Pages — public
 import Index        from "./pages/Index";
@@ -50,32 +51,48 @@ const App = () => (
 
             {/* ── Student ────────────────────────────────────────── */}
             <Route path="/dashboard/student" element={
-              <ProtectedRoute><StudentDashboard /></ProtectedRoute>
+              <ProtectedRoute>
+                <DashboardLayout><StudentDashboard /></DashboardLayout>
+              </ProtectedRoute>
             } />
             <Route path="/dashboard/my-courses" element={
-              <ProtectedRoute><StudentDashboard defaultTab="my-courses" /></ProtectedRoute>
+              <ProtectedRoute>
+                <DashboardLayout><StudentDashboard defaultTab="my-courses" /></DashboardLayout>
+              </ProtectedRoute>
             } />
             <Route path="/dashboard/explore" element={
-              <ProtectedRoute><StudentDashboard defaultTab="explore" /></ProtectedRoute>
+              <ProtectedRoute>
+                <DashboardLayout><StudentDashboard defaultTab="explore" /></DashboardLayout>
+              </ProtectedRoute>
             } />
             <Route path="/dashboard/certificates" element={
-              <ProtectedRoute><Certificates /></ProtectedRoute>
+              <ProtectedRoute>
+                <DashboardLayout><Certificates /></DashboardLayout>
+              </ProtectedRoute>
             } />
             <Route path="/dashboard/profile" element={
-              <ProtectedRoute><Profile /></ProtectedRoute>
+              <ProtectedRoute>
+                <DashboardLayout><Profile /></DashboardLayout>
+              </ProtectedRoute>
             } />
             <Route path="/dashboard/settings" element={
-              <ProtectedRoute><StudentSettings /></ProtectedRoute>
+              <ProtectedRoute>
+                <DashboardLayout><StudentSettings /></DashboardLayout>
+              </ProtectedRoute>
             } />
 
             {/* ── Instructor ─────────────────────────────────────── */}
             <Route path="/dashboard/instructor" element={
-              <ProtectedRoute><InstructorDashboard /></ProtectedRoute>
+              <ProtectedRoute>
+                <DashboardLayout><InstructorDashboard /></DashboardLayout>
+              </ProtectedRoute>
             } />
 
             {/* ── Admin ──────────────────────────────────────────── */}
             <Route path="/dashboard/admin" element={
-              <ProtectedRoute><AdminDashboard /></ProtectedRoute>
+              <ProtectedRoute>
+                <DashboardLayout><AdminDashboard /></DashboardLayout>
+              </ProtectedRoute>
             } />
 
             {/* 404 */}
