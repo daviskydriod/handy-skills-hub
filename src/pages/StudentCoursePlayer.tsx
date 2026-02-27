@@ -18,6 +18,27 @@ const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
 
+
+
+
+
+// Add this useEffect to StudentCoursePlayer.tsx
+useEffect(() => {
+  return () => {
+    // Flush any pending sync immediately on unmount (navigating away)
+    if (syncTimer.current) {
+      clearTimeout(syncTimer.current);
+      // Fire immediately
+      if (userId && courseId && totalLessons > 0) {
+        const pct = Math.round((done.size / totalLessons) * 100);
+        updateProgress(Number(courseId), pct, pct === 100).catch(() => {});
+      }
+    }
+  };
+}, [done, userId, courseId, totalLessons]);
+
+
+
 // ── YouTube helper ────────────────────────────────────────────────────
 function getYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -106,7 +127,7 @@ export default function StudentCoursePlayer() {
   useEffect(() => {
     if (!course || !userId || !courseId || flatLessons.length === 0) return;
     const cached = loadCache(userId, courseId);
-    if (cached.size > 0) return;
+    if (cached.size > 0) return; // already have local data
     const apiProgress = (course as any).progress ?? 0;
     if (apiProgress > 0) {
       const doneCount = Math.round((apiProgress / 100) * flatLessons.length);
@@ -128,7 +149,7 @@ export default function StudentCoursePlayer() {
   const progressPct  = totalLessons > 0 ? Math.round((doneCount / totalLessons) * 100) : 0;
   const isCompleted  = progressPct === 100;
 
-  // Debounced API sync — 800ms after last change
+  // Debounced API sync — 2 s after last change
   const syncToApi = useCallback((newDone: Set<string>) => {
     if (!userId || !courseId || totalLessons === 0) return;
     if (syncTimer.current) clearTimeout(syncTimer.current);
@@ -167,20 +188,6 @@ export default function StudentCoursePlayer() {
       return next;
     });
   }, [userId, courseId, syncToApi]);
-
-  // ✅ FIXED: useEffect is now correctly placed INSIDE the component
-  // Flush any pending sync immediately when navigating away
-  useEffect(() => {
-    return () => {
-      if (syncTimer.current) {
-        clearTimeout(syncTimer.current);
-        if (userId && courseId && totalLessons > 0) {
-          const pct = Math.round((done.size / totalLessons) * 100);
-          updateProgress(Number(courseId), pct, pct === 100).catch(() => {});
-        }
-      }
-    };
-  }, [done, userId, courseId, totalLessons]);
 
   const goToLesson = (pi: number, mi: number, li: number) => {
     setActivePart(pi); setActiveMod(mi); setActiveLesson(li);
@@ -315,7 +322,7 @@ export default function StudentCoursePlayer() {
               <div style={{ position: "relative", paddingTop: "min(56.25%, 72vh)" }}>
                 <iframe
                   key={`${activePart}-${activeMod}-${activeLesson}`}
-                  src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&iv_load_policy=3&playsinline=1`}
+                  src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
