@@ -1,9 +1,8 @@
-// File: frontend/src/pages/CourseDetail.tsx
-// Fetches course data from the real PHP API via useCourse hook.
-// Curriculum tab now renders real Parts → Modules → Lessons from course.content
+typescript
 
+// File: frontend/src/pages/CourseDetail.tsx
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Star, Clock, BookOpen, Users, PlayCircle, FileText,
   Award, CheckCircle, MessageCircle, ArrowLeft, Loader2,
@@ -12,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/components/layout/MainLayout';
-import EnrollmentModal from '@/components/EnrollmentModal';
 import { BUSINESS_INFO } from '@/data/mockData';
 import { useCourse } from '../hooks/useCourses';
 import type { CoursePart, CourseModule, Lesson } from '@/api/courses';
@@ -22,35 +20,18 @@ const GOLD = '#EAB308';
 const GOLD2 = '#CA8A04';
 const TEAL = '#0d9488';
 
-// ── YouTube embed helper ──────────────────────────────────────────────
-function getYouTubeId(url: string): string | null {
-  const match = url?.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:.*v=|embed\/|shorts\/))([^&?/\s]{11})/
-  );
-  return match ? match[1] : null;
-}
-
-// ── Single lesson row + optional video modal ──────────────────────────
-function LessonRow({ lesson, partIdx, modIdx, lessonIdx }: {
-  lesson: Lesson; partIdx: number; modIdx: number; lessonIdx: number;
+// ── Single lesson row — NO video preview, NO video link shown ─────────
+function LessonRow({ lesson, lessonIdx }: {
+  lesson: Lesson; lessonIdx: number;
 }) {
-  const [videoOpen, setVideoOpen] = useState(false);
-  const ytId = getYouTubeId(lesson.videoUrl ?? '');
+  const hasVideo = !!lesson.videoUrl;
 
   return (
     <div style={{ borderBottom: '1px solid #f1f5f9' }}>
-      {/* Lesson header row */}
-      <div
-        onClick={() => ytId && setVideoOpen(v => !v)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '11px 20px',
-          cursor: ytId ? 'pointer' : 'default',
-          transition: 'background .15s',
-        }}
-        onMouseEnter={e => { if (ytId) (e.currentTarget as HTMLDivElement).style.background = '#fafcff'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
-      >
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '11px 20px',
+      }}>
         {/* Lesson number badge */}
         <span style={{
           minWidth: 22, height: 22, borderRadius: 6,
@@ -62,7 +43,8 @@ function LessonRow({ lesson, partIdx, modIdx, lessonIdx }: {
           {lessonIdx + 1}
         </span>
 
-        {ytId
+        {/* Show icon type but NOT the actual link */}
+        {hasVideo
           ? <Film size={13} style={{ color: GOLD, flexShrink: 0 }} />
           : <FileText size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
         }
@@ -71,11 +53,6 @@ function LessonRow({ lesson, partIdx, modIdx, lessonIdx }: {
           <p style={{ fontSize: 13, fontWeight: 600, color: NAVY, lineHeight: 1.3 }}>
             {lesson.title || `Lesson ${lessonIdx + 1}`}
           </p>
-          {lesson.description && (
-            <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {lesson.description}
-            </p>
-          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -84,45 +61,29 @@ function LessonRow({ lesson, partIdx, modIdx, lessonIdx }: {
               <Clock size={11} /> {lesson.duration}
             </span>
           )}
-          {ytId && (
+          {hasVideo && (
             <span style={{
               fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
               background: GOLD + '18', color: GOLD2, border: `1px solid ${GOLD}40`,
               display: 'flex', alignItems: 'center', gap: 3,
             }}>
-              <PlayCircle size={10} /> {videoOpen ? 'Hide' : 'Watch'}
+              <PlayCircle size={10} /> Video
             </span>
           )}
         </div>
       </div>
-
-      {/* YouTube embed — shown inline when clicked */}
-      {ytId && videoOpen && (
-        <div style={{ padding: '0 20px 14px' }}>
-          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0', background: '#000' }}>
-            <iframe
-              src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
-              style={{ width: '100%', height: 280, border: 'none', display: 'block' }}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              title={lesson.title || 'Lesson video'}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 // ── Module block (collapsible) ────────────────────────────────────────
-function ModuleBlock({ mod, partIdx, modIdx }: {
-  mod: CourseModule; partIdx: number; modIdx: number;
+function ModuleBlock({ mod, modIdx }: {
+  mod: CourseModule; modIdx: number;
 }) {
-  const [open, setOpen] = useState(modIdx === 0); // first module open by default
+  const [open, setOpen] = useState(modIdx === 0);
 
   return (
     <div style={{ marginBottom: 8, border: '1px solid #e8edf2', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
-      {/* Module header */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
@@ -158,13 +119,10 @@ function ModuleBlock({ mod, partIdx, modIdx }: {
         }
       </div>
 
-      {/* Lessons */}
       {open && (mod.lessons ?? []).map((lesson, li) => (
         <LessonRow
           key={lesson.id ?? li}
           lesson={lesson}
-          partIdx={partIdx}
-          modIdx={modIdx}
           lessonIdx={li}
         />
       ))}
@@ -172,7 +130,7 @@ function ModuleBlock({ mod, partIdx, modIdx }: {
   );
 }
 
-// ── Part block (always expanded, collapsible by user) ─────────────────
+// ── Part block ────────────────────────────────────────────────────────
 function PartBlock({ part, partIdx, totalParts }: {
   part: CoursePart; partIdx: number; totalParts: number;
 }) {
@@ -181,7 +139,6 @@ function PartBlock({ part, partIdx, totalParts }: {
 
   return (
     <div style={{ marginBottom: 16, borderRadius: 14, overflow: 'hidden', border: `1.5px solid ${NAVY}18` }}>
-      {/* Part header */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
@@ -222,11 +179,10 @@ function PartBlock({ part, partIdx, totalParts }: {
         </div>
       </div>
 
-      {/* Modules */}
       {open && (
         <div style={{ background: '#f8fafc', padding: '12px 12px 4px' }}>
           {(part.modules ?? []).map((mod, mi) => (
-            <ModuleBlock key={mod.id ?? mi} mod={mod} partIdx={partIdx} modIdx={mi} />
+            <ModuleBlock key={mod.id ?? mi} mod={mod} modIdx={mi} />
           ))}
         </div>
       )}
@@ -234,7 +190,7 @@ function PartBlock({ part, partIdx, totalParts }: {
   );
 }
 
-// ── Fallback curriculum (when no content saved yet) ───────────────────
+// ── Fallback curriculum ───────────────────────────────────────────────
 const FALLBACK_CURRICULUM = [
   { module: 'Module 1: Introduction',    lessons: ['Welcome & Course Overview', 'Setting Up Your Environment', 'Understanding the Basics'] },
   { module: 'Module 2: Core Concepts',   lessons: ['Fundamental Principles', 'Hands-On Practice', 'Real-World Applications'] },
@@ -244,10 +200,9 @@ const FALLBACK_CURRICULUM = [
 // ─────────────────────────────────────────────────────────────────────
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { course, isLoading, error } = useCourse(id);
-  const [enrollOpen, setEnrollOpen] = useState(false);
 
-  /* ── Loading ── */
   if (isLoading) {
     return (
       <MainLayout>
@@ -258,7 +213,6 @@ export default function CourseDetail() {
     );
   }
 
-  /* ── Error / not found ── */
   if (error || !course) {
     return (
       <MainLayout>
@@ -276,10 +230,8 @@ export default function CourseDetail() {
     `Hello HandyGidi! I'm interested in the "${course.title}" course (₦${course.price.toLocaleString()}). Please send me enrollment details.`
   )}`;
 
-  // Does this course have real structured content?
   const hasParts = (course.content?.parts?.length ?? 0) > 0;
 
-  // Count real totals from content if available
   const totalModules = hasParts
     ? course.content!.parts.reduce((a, p) => a + (p.modules?.length ?? 0), 0)
     : 0;
@@ -288,9 +240,14 @@ export default function CourseDetail() {
         a + (p.modules ?? []).reduce((b, m) => b + (m.lessons?.length ?? 0), 0), 0)
     : course.lessons;
 
+  // ✅ Enroll button — goes to register page with course context
+  const handleEnroll = () => {
+    navigate(`/register?redirect=/learn/${course.id}&course=${encodeURIComponent(course.title)}`);
+  };
+
   return (
     <MainLayout>
-      {/* ── PAGE HEADER ── */}
+      {/* ── PAGE HERO — no description ── */}
       <section className="py-10 md:py-16 text-white"
         style={{ background: `linear-gradient(135deg,#060d1c 0%,${NAVY} 60%,#0f2d56 100%)` }}>
         <div className="container">
@@ -301,9 +258,7 @@ export default function CourseDetail() {
                 {course.category}
               </span>
               <h1 className="font-heading font-bold text-2xl md:text-4xl mt-2 mb-4">{course.title}</h1>
-              <p className="opacity-80 text-sm md:text-base mb-4">
-                {course.description ?? 'Master practical skills with hands-on projects and expert instruction.'}
-              </p>
+              {/* ✅ NO description here */}
               <div className="flex flex-wrap items-center gap-4 text-sm opacity-80">
                 <span className="flex items-center gap-1">
                   <Star size={14} style={{ color: GOLD, fill: GOLD }} /> {course.rating}
@@ -383,11 +338,10 @@ export default function CourseDetail() {
                 </div>
               </TabsContent>
 
-              {/* ── CURRICULUM ── */}
+              {/* ── CURRICULUM — no video previews, no clickable links ── */}
               <TabsContent value="curriculum">
                 {hasParts ? (
                   <div>
-                    {/* Summary bar */}
                     <div style={{
                       display: 'flex', gap: 16, flexWrap: 'wrap',
                       background: '#fff', border: '1px solid #e8edf2',
@@ -401,7 +355,29 @@ export default function CourseDetail() {
                       {course.duration && <span>{course.duration} total</span>}
                     </div>
 
-                    {/* Parts */}
+                    {/* ✅ Enroll prompt banner */}
+                    <div style={{
+                      background: `linear-gradient(135deg,${NAVY}f0,#0f2d56)`,
+                      borderRadius: 12, padding: '14px 18px', marginBottom: 16,
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      gap: 12, flexWrap: 'wrap',
+                    }}>
+                      <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600 }}>
+                        🔒 Register or log in to access full course content
+                      </p>
+                      <button
+                        onClick={handleEnroll}
+                        style={{
+                          background: `linear-gradient(135deg,${GOLD},${GOLD2})`,
+                          color: '#060d1c', border: 'none', borderRadius: 8,
+                          padding: '8px 18px', fontWeight: 800, fontSize: 12,
+                          cursor: 'pointer', whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Enroll Now →
+                      </button>
+                    </div>
+
                     {course.content!.parts.map((part, pi) => (
                       <PartBlock
                         key={part.id ?? pi}
@@ -412,7 +388,6 @@ export default function CourseDetail() {
                     ))}
                   </div>
                 ) : (
-                  /* Fallback: no content saved yet */
                   <div className="space-y-4">
                     {FALLBACK_CURRICULUM.map((mod, i) => (
                       <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -483,11 +458,12 @@ export default function CourseDetail() {
               )}
               <p className="text-xs text-slate-400 mb-4">Flexible payment plans available</p>
 
+              {/* ✅ Enroll Now → goes to register/login page */}
               <Button
                 className="w-full mb-2 text-sm font-bold border-0"
                 style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: '#060d1c' }}
                 size="lg"
-                onClick={() => setEnrollOpen(true)}
+                onClick={handleEnroll}
               >
                 Enroll Now
               </Button>
@@ -526,8 +502,6 @@ export default function CourseDetail() {
           </div>
         </div>
       </section>
-
-      <EnrollmentModal open={enrollOpen} onOpenChange={setEnrollOpen} course={course} />
     </MainLayout>
   );
 }
