@@ -86,7 +86,11 @@ function parseCourseContent(raw: unknown): CourseContent | undefined {
   if (!raw) return undefined;
   if (typeof raw === "object") return raw as CourseContent;
   if (typeof raw === "string") {
-    try { return JSON.parse(raw) as CourseContent; } catch { return undefined; }
+    try {
+      return JSON.parse(raw) as CourseContent;
+    } catch {
+      return undefined;
+    }
   }
   return undefined;
 }
@@ -98,8 +102,24 @@ function hydrateCourse(c: any): Course {
 // ── API calls ────────────────────────────────────────────────────────
 
 /** List courses (with optional filters) */
-export async function getCourses(filter: CoursesFilter = {}): Promise<CoursesResponse> {
-  const res = await client.get<CoursesResponse>("/courses", { params: filter });
+export async function getCourses(
+  filter: CoursesFilter = {}
+): Promise<CoursesResponse> {
+  // Build clean params — strip anything falsy or "default"
+  // so the backend never receives sort=default, category=, search=, etc.
+  const params: Record<string, any> = {};
+
+  if (filter.category) params.category = filter.category;
+  if (filter.search)   params.search   = filter.search;
+  if (filter.page)     params.page     = filter.page;
+  if (filter.limit)    params.limit    = filter.limit;
+
+  // ✅ Only send sort when it's a real, backend-accepted value
+  if (filter.sort && filter.sort !== "default") {
+    params.sort = filter.sort;
+  }
+
+  const res = await client.get<CoursesResponse>("/courses", { params });
   return {
     ...res.data,
     courses: res.data.courses.map(hydrateCourse),
