@@ -347,7 +347,7 @@ export default function InstructorDashboard() {
         <div style={{ padding: sidebarOpen ? "18px 16px 14px" : "18px 0 14px", display: "flex", alignItems: "center", gap: sidebarOpen ? 10 : 0, justifyContent: sidebarOpen ? "flex-start" : "center", borderBottom: "1px solid #f1f5f9" }}>
         
             </div>
-          )}
+        
         </div>
 
         {/* Nav links */}
