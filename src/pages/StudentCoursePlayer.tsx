@@ -97,6 +97,20 @@ export default function StudentCoursePlayer() {
   const courseId = id ?? "";
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ✅ KEY FIX: Refs that always hold the latest values.
+  // Prevents stale closure in the unmount flush — this is why
+  // progress was not updating on the dashboard.
+  const doneRef         = useRef<Set<string>>(new Set());
+  const totalLessonsRef = useRef<number>(0);
+  const userIdRef       = useRef<number>(0);
+  const courseIdRef     = useRef<string>("");
+
+  // Keep refs in sync on every render
+  useEffect(() => { doneRef.current = done; }, [done]);
+  useEffect(() => { totalLessonsRef.current = flatLessons.length; }, [flatLessons.length]);
+  useEffect(() => { userIdRef.current = userId; }, [userId]);
+  useEffect(() => { courseIdRef.current = courseId; }, [courseId]);
+
   // Load cached progress on mount
   useEffect(() => {
     if (userId && courseId) setDone(loadCache(userId, courseId));
@@ -168,19 +182,22 @@ export default function StudentCoursePlayer() {
     });
   }, [userId, courseId, syncToApi]);
 
-  // ✅ FIXED: useEffect is now correctly placed INSIDE the component
-  // Flush any pending sync immediately when navigating away
+  // ✅ FIXED: Unmount flush uses REFS so it always has the latest values.
+  // Empty deps array means this only runs on unmount — reading from refs
+  // guarantees we get the current done set, not a stale snapshot.
   useEffect(() => {
     return () => {
-      if (syncTimer.current) {
-        clearTimeout(syncTimer.current);
-        if (userId && courseId && totalLessons > 0) {
-          const pct = Math.round((done.size / totalLessons) * 100);
-          updateProgress(Number(courseId), pct, pct === 100).catch(() => {});
-        }
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+      const uid   = userIdRef.current;
+      const cid   = courseIdRef.current;
+      const total = totalLessonsRef.current;
+      const d     = doneRef.current;
+      if (uid && cid && total > 0) {
+        const pct = Math.round((d.size / total) * 100);
+        updateProgress(Number(cid), pct, pct === 100).catch(() => {});
       }
     };
-  }, [done, userId, courseId, totalLessons]);
+  }, []); // empty deps — unmount only, reads fresh values from refs
 
   const goToLesson = (pi: number, mi: number, li: number) => {
     setActivePart(pi); setActiveMod(mi); setActiveLesson(li);
@@ -276,7 +293,6 @@ export default function StudentCoursePlayer() {
           {course.title}
         </p>
 
-        {/* Progress pill */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
           {syncing && (
             <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
@@ -309,7 +325,6 @@ export default function StudentCoursePlayer() {
         {/* ── MAIN CONTENT ── */}
         <div style={{ flex: 1, minWidth: 0, overflowY: "auto" }}>
 
-          {/* Video area */}
           <div style={{ background: "#000" }}>
             {ytId ? (
               <div style={{ position: "relative", paddingTop: "min(56.25%, 72vh)" }}>
@@ -332,10 +347,8 @@ export default function StudentCoursePlayer() {
             )}
           </div>
 
-          {/* Lesson details */}
           <div style={{ padding: "28px 32px 60px", maxWidth: 820, margin: "0 auto" }} className="fade-in">
 
-            {/* Breadcrumb */}
             <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#94a3b8", marginBottom: 14, flexWrap: "wrap" }}>
               <span>{parts[activePart]?.title || `Part ${activePart + 1}`}</span>
               <ChevronRight size={10} />
@@ -344,12 +357,10 @@ export default function StudentCoursePlayer() {
               <span style={{ color: TEAL, fontWeight: 700 }}>Lesson {activeLesson + 1}</span>
             </div>
 
-            {/* Title */}
             <h1 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 22, color: NAVY, marginBottom: 12, lineHeight: 1.3 }}>
               {currentLesson?.title || `Lesson ${activeLesson + 1}`}
             </h1>
 
-            {/* Meta */}
             <div style={{ display: "flex", gap: 16, marginBottom: 22, paddingBottom: 18, borderBottom: "1px solid #f1f5f9", flexWrap: "wrap" }}>
               {currentLesson?.duration && (
                 <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#64748b" }}>
@@ -371,7 +382,6 @@ export default function StudentCoursePlayer() {
               </span>
             </div>
 
-            {/* Description */}
             {currentLesson?.description && (
               <div style={{ background: "#f8fafc", border: "1px solid #e8edf2", borderRadius: 12, padding: 20, marginBottom: 28 }}>
                 <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.9 }}>
@@ -380,14 +390,12 @@ export default function StudentCoursePlayer() {
               </div>
             )}
 
-            {/* Navigation */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", paddingTop: 20, borderTop: "1px solid #f1f5f9" }}>
               <button onClick={goPrev} disabled={!hasPrev} className="nav-btn" style={{ background: "#f1f5f9", color: "#475569" }}>
                 <ChevronLeft size={14} /> Previous
               </button>
 
               <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                {/* Mark complete toggle */}
                 <button
                   onClick={() => done.has(currentKey) ? unmarkDone(currentKey) : markDone(currentKey)}
                   style={{
@@ -421,13 +429,10 @@ export default function StudentCoursePlayer() {
               </div>
             </div>
 
-            {/* Completion banner */}
             {isCompleted && (
               <div style={{ marginTop: 28, background: "linear-gradient(135deg,#ecfdf5,#d1fae5)", border: "1px solid #6ee7b7", borderRadius: 16, padding: 28, textAlign: "center" }}>
                 <div style={{ fontSize: 40, marginBottom: 10 }}>🎉</div>
-                <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 20, color: "#065f46", marginBottom: 6 }}>
-                  Course Complete!
-                </p>
+                <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 20, color: "#065f46", marginBottom: 6 }}>Course Complete!</p>
                 <p style={{ fontSize: 13, color: "#047857", marginBottom: 20 }}>
                   Congratulations on finishing <strong>{course.title}</strong>
                 </p>
@@ -445,29 +450,15 @@ export default function StudentCoursePlayer() {
         {/* ── CURRICULUM SIDEBAR ── */}
         <aside
           className={`sidebar-panel${sidebarOpen ? "" : " closed"}`}
-          style={{
-            width: 320,
-            background: "#fff",
-            borderLeft: "1px solid #e8edf2",
-            display: "flex",
-            flexDirection: "column",
-            flexShrink: 0,
-            overflowY: "auto",
-            transition: "transform .25s cubic-bezier(.4,0,.2,1)",
-          }}
+          style={{ width: 320, background: "#fff", borderLeft: "1px solid #e8edf2", display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto", transition: "transform .25s cubic-bezier(.4,0,.2,1)" }}
         >
-          {/* Sidebar header — sticky */}
           <div style={{ padding: "16px 14px 12px", borderBottom: "1px solid #f1f5f9", position: "sticky", top: 0, background: "#fff", zIndex: 10, flexShrink: 0 }}>
-            <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 13, color: NAVY, marginBottom: 8 }}>
-              Course Content
-            </p>
+            <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 13, color: NAVY, marginBottom: 8 }}>Course Content</p>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
               <div style={{ flex: 1, height: 5, background: "#f1f5f9", borderRadius: 99, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg,${TEAL},${TEAL2})`, transition: "width .6s ease" }} />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 800, color: isCompleted ? "#10b981" : TEAL, flexShrink: 0 }}>
-                {progressPct}%
-              </span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: isCompleted ? "#10b981" : TEAL, flexShrink: 0 }}>{progressPct}%</span>
             </div>
             <p style={{ fontSize: 11, color: "#94a3b8" }}>
               {doneCount} / {totalLessons} lessons
@@ -475,7 +466,6 @@ export default function StudentCoursePlayer() {
             </p>
           </div>
 
-          {/* Parts */}
           <div style={{ flex: 1, padding: "8px 8px 32px", overflowY: "auto" }}>
             {!hasParts ? (
               <div style={{ padding: "32px 16px", textAlign: "center" }}>
@@ -485,59 +475,44 @@ export default function StudentCoursePlayer() {
               const partCollapsed = collapsedParts[pi];
               const partDoneCount = (part.modules ?? []).reduce((a, m, mi) =>
                 a + (m.lessons ?? []).filter((_, li) => done.has(lessonKey(pi, mi, li))).length, 0);
-              const partTotal    = (part.modules ?? []).reduce((a, m) => a + (m.lessons?.length ?? 0), 0);
-              const partAllDone  = partDoneCount === partTotal && partTotal > 0;
+              const partTotal   = (part.modules ?? []).reduce((a, m) => a + (m.lessons?.length ?? 0), 0);
+              const partAllDone = partDoneCount === partTotal && partTotal > 0;
               const partIsActive = pi === activePart;
 
               return (
                 <div key={pi} style={{ marginBottom: 4 }}>
                   <button className="part-head" onClick={() => setCollapsedParts(p => ({ ...p, [pi]: !p[pi] }))}>
-                    <div style={{
-                      width: 24, height: 24, borderRadius: 7, flexShrink: 0,
-                      background: partAllDone ? "#d1fae5" : partIsActive ? TEAL + "18" : "#f1f5f9",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
+                    <div style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, background: partAllDone ? "#d1fae5" : partIsActive ? TEAL + "18" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {partAllDone
                         ? <CheckCircle size={13} style={{ color: "#10b981" }} />
                         : <span style={{ fontSize: 10, fontWeight: 800, color: partIsActive ? TEAL : "#64748b" }}>{pi + 1}</span>
                       }
                     </div>
                     <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                      <p style={{ fontWeight: 700, fontSize: 12, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {part.title || `Part ${pi + 1}`}
-                      </p>
+                      <p style={{ fontWeight: 700, fontSize: 12, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{part.title || `Part ${pi + 1}`}</p>
                       <p style={{ fontSize: 10, color: "#94a3b8" }}>{partDoneCount}/{partTotal} lessons done</p>
                     </div>
                     <ChevronDown size={13} style={{ color: "#94a3b8", transform: partCollapsed ? "rotate(-90deg)" : "none", transition: "transform .2s", flexShrink: 0 }} />
                   </button>
 
                   {!partCollapsed && (part.modules ?? []).map((mod, mi) => {
-                    const modKey       = `${pi}-${mi}`;
+                    const modKey      = `${pi}-${mi}`;
                     const modCollapsed = collapsedMods[modKey];
-                    const modDone      = (mod.lessons ?? []).filter((_, li) => done.has(lessonKey(pi, mi, li))).length;
-                    const modAllDone   = modDone === (mod.lessons?.length ?? 0) && (mod.lessons?.length ?? 0) > 0;
-                    const modIsActive  = pi === activePart && mi === activeMod;
+                    const modDone     = (mod.lessons ?? []).filter((_, li) => done.has(lessonKey(pi, mi, li))).length;
+                    const modAllDone  = modDone === (mod.lessons?.length ?? 0) && (mod.lessons?.length ?? 0) > 0;
+                    const modIsActive = pi === activePart && mi === activeMod;
 
                     return (
                       <div key={mi} style={{ paddingLeft: 8 }}>
                         <button className="mod-head" onClick={() => setCollapsedMods(p => ({ ...p, [modKey]: !p[modKey] }))}>
-                          <div style={{
-                            width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-                            background: modAllDone ? "#d1fae5" : "#f1f5f9",
-                            border: `1px solid ${modIsActive ? TEAL + "60" : "#e2e8f0"}`,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>
+                          <div style={{ width: 18, height: 18, borderRadius: 5, flexShrink: 0, background: modAllDone ? "#d1fae5" : "#f1f5f9", border: `1px solid ${modIsActive ? TEAL + "60" : "#e2e8f0"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                             {modAllDone
                               ? <CheckCircle size={10} style={{ color: "#10b981" }} />
                               : <span style={{ fontSize: 8, fontWeight: 800, color: modIsActive ? TEAL : "#94a3b8" }}>{mi + 1}</span>
                             }
                           </div>
-                          <p style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left" }}>
-                            {mod.title || `Module ${mi + 1}`}
-                          </p>
-                          <span style={{ fontSize: 10, color: "#94a3b8", marginRight: 4 }}>
-                            {modDone}/{mod.lessons?.length ?? 0}
-                          </span>
+                          <p style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left" }}>{mod.title || `Module ${mi + 1}`}</p>
+                          <span style={{ fontSize: 10, color: "#94a3b8", marginRight: 4 }}>{modDone}/{mod.lessons?.length ?? 0}</span>
                           <ChevronDown size={11} style={{ color: "#94a3b8", transform: modCollapsed ? "rotate(-90deg)" : "none", transition: "transform .2s", flexShrink: 0 }} />
                         </button>
 
@@ -548,12 +523,7 @@ export default function StudentCoursePlayer() {
                           const hasVid   = !!getYouTubeId(lesson.videoUrl ?? "");
 
                           return (
-                            <button
-                              key={li}
-                              className={`ls-item${isActive ? " active" : ""}`}
-                              onClick={() => goToLesson(pi, mi, li)}
-                              style={{ paddingLeft: 30 }}
-                            >
+                            <button key={li} className={`ls-item${isActive ? " active" : ""}`} onClick={() => goToLesson(pi, mi, li)} style={{ paddingLeft: 30 }}>
                               <div style={{ width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                 {isDone
                                   ? <CheckCircle size={14} style={{ color: "#10b981" }} />
@@ -565,18 +535,10 @@ export default function StudentCoursePlayer() {
                                 }
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{
-                                  fontSize: 12,
-                                  fontWeight: isActive ? 700 : 500,
-                                  color: isActive ? NAVY : isDone ? "#94a3b8" : "#475569",
-                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                  textDecoration: isDone && !isActive ? "line-through" : "none",
-                                }}>
+                                <p style={{ fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? NAVY : isDone ? "#94a3b8" : "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: isDone && !isActive ? "line-through" : "none" }}>
                                   {lesson.title || `Lesson ${li + 1}`}
                                 </p>
-                                {lesson.duration && (
-                                  <p style={{ fontSize: 10, color: "#94a3b8" }}>{lesson.duration}</p>
-                                )}
+                                {lesson.duration && <p style={{ fontSize: 10, color: "#94a3b8" }}>{lesson.duration}</p>}
                               </div>
                             </button>
                           );
