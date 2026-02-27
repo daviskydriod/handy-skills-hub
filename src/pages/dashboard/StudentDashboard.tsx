@@ -14,8 +14,9 @@ import { getMyEnrollments, type EnrolledCourse } from "@/api/enrollments";
 import { getCourses, type Course } from "@/api/courses";
 import { submitPayment, getMyPayments, type Payment } from "@/api/payments";
 
-// ── Theme (matches InstructorDashboard) ──────────────────────────────
-const TEAL    = "#0b1f3a";
+// ── Theme ─────────────────────────────────────────────────────────────
+// ✅ FIX: TEAL was incorrectly set to "#0b1f3a" (navy). Corrected to teal.
+const TEAL    = "#0d9488";
 const TEAL2   = "#0f766e";
 const NAVY    = "#0b1f3a";
 const SIDEBAR_W = 240;
@@ -91,7 +92,6 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-// ── Sidebar NavItem (same as InstructorDashboard) ─────────────────────
 const NavItem = ({ icon: Icon, label, active, onClick, badge, collapsed }: {
   icon: any; label: string; active: boolean; onClick: () => void; badge?: number; collapsed: boolean;
 }) => (
@@ -263,9 +263,9 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   const [search,       setSearch]       = useState("");
   const [payingCourse, setPayingCourse] = useState<Course | null>(null);
 
-  const enrolledIds = new Set(enrolled.map(c => c.id));
+  const enrolledIds     = new Set(enrolled.map(c => c.id));
   const pendingPayments = payments.filter(p => p.status === "pending");
-  const SW = sidebarOpen ? SIDEBAR_W : 64;
+  const SW              = sidebarOpen ? SIDEBAR_W : 64;
 
   const fetchEnrolled = useCallback(async () => {
     setLE(true);
@@ -288,10 +288,35 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
     finally { setLP(false); }
   }, []);
 
+  // Initial load
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchEnrolled(); fetchExplore(); fetchPayments();
   }, [isAuthenticated, fetchEnrolled, fetchExplore, fetchPayments]);
+
+  // ✅ FIX: Re-fetch enrolled courses when user comes BACK to this tab
+  // from the course player — this is what updates the progress bars.
+  // The player syncs progress to the DB, and this pulls the fresh data.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && isAuthenticated) {
+        fetchEnrolled();
+        fetchPayments();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [isAuthenticated, fetchEnrolled, fetchPayments]);
+
+  // ✅ FIX: Also refresh when the browser tab gets focus (covers
+  // the case where the player is on the same tab via router navigation)
+  useEffect(() => {
+    const onFocus = () => {
+      if (isAuthenticated) fetchEnrolled();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [isAuthenticated, fetchEnrolled]);
 
   const total       = enrolled.length;
   const completed   = enrolled.filter(c => c.completed).length;
@@ -304,10 +329,10 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   );
 
   const navItems: { key: TabType; label: string; icon: any; badge?: number }[] = [
-    { key: "overview",   label: "Overview",       icon: LayoutDashboard },
-    { key: "my-courses", label: "My Courses",     icon: BookOpen },
-    { key: "explore",    label: "Explore",        icon: Compass },
-    { key: "payments",   label: "My Payments",    icon: DollarSign, badge: pendingPayments.length },
+    { key: "overview",   label: "Overview",    icon: LayoutDashboard },
+    { key: "my-courses", label: "My Courses",  icon: BookOpen },
+    { key: "explore",    label: "Explore",     icon: Compass },
+    { key: "payments",   label: "My Payments", icon: DollarSign, badge: pendingPayments.length },
   ];
 
   return (
@@ -351,13 +376,11 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
             <span style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 13, color: NAVY }}>Student Portal</span>
           )}
         </div>
-
         <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
           {navItems.map(({ key, label, icon, badge }) => (
             <NavItem key={key} icon={icon} label={label} active={tab === key} badge={badge} collapsed={!sidebarOpen} onClick={() => setTab(key as TabType)} />
           ))}
         </nav>
-
         <div style={{ borderTop: "1px solid #f1f5f9", padding: sidebarOpen ? "12px 16px" : "12px 0", display: "flex", alignItems: "center", gap: sidebarOpen ? 10 : 0, justifyContent: sidebarOpen ? "flex-start" : "center" }}>
           <UserAvatar name={user?.name} size={32} />
           {sidebarOpen && (
@@ -373,14 +396,13 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
 
       {/* ══════════ MAIN ══════════ */}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        {/* Top bar */}
         <header style={{ background: "#fff", borderBottom: "1px solid #e8edf2", position: "sticky", top: 0, zIndex: 30, height: 56, display: "flex", alignItems: "center", padding: "0 20px", gap: 14 }}>
           <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8, color: "#64748b", display: "flex" }}>
             {sidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
           </button>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: NAVY }}>
-              {tab === "overview"   ? `Welcome back, ${user?.name?.split(" ")[0] ?? "Student"} 👋`
+              {tab === "overview"    ? `Welcome back, ${user?.name?.split(" ")[0] ?? "Student"} 👋`
                : tab === "my-courses" ? "My Courses"
                : tab === "explore"    ? "Explore Courses"
                :                        "My Payments"}
@@ -397,13 +419,12 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
           {/* ════ OVERVIEW ════ */}
           {tab === "overview" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              {/* Stat cards */}
               <div style={{ display: "grid", gap: 12 }} className="g4">
                 {[
-                  { label: "Enrolled",     value: loadingE ? "—" : total,              icon: BookOpen,    color: TEAL,      bg: TEAL + "15" },
-                  { label: "Completed",    value: loadingE ? "—" : completed,          icon: CheckCircle, color: "#10b981", bg: "#10b98115" },
-                  { label: "In Progress",  value: loadingE ? "—" : inProgress,         icon: TrendingUp,  color: "#3b82f6", bg: "#3b82f615" },
-                  { label: "Avg Progress", value: loadingE ? "—" : `${avgProgress}%`,  icon: BarChart2,   color: "#8b5cf6", bg: "#8b5cf615" },
+                  { label: "Enrolled",     value: loadingE ? "—" : total,             icon: BookOpen,    color: TEAL,      bg: TEAL + "15" },
+                  { label: "Completed",    value: loadingE ? "—" : completed,         icon: CheckCircle, color: "#10b981", bg: "#10b98115" },
+                  { label: "In Progress",  value: loadingE ? "—" : inProgress,        icon: TrendingUp,  color: "#3b82f6", bg: "#3b82f615" },
+                  { label: "Avg Progress", value: loadingE ? "—" : `${avgProgress}%`, icon: BarChart2,   color: "#8b5cf6", bg: "#8b5cf615" },
                 ].map(({ label, value, icon: Icon, color, bg }) => (
                   <div key={label} className="card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -417,7 +438,6 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                 ))}
               </div>
 
-              {/* Pending payments notice */}
               {pendingPayments.length > 0 && (
                 <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 14, padding: 14, display: "flex", alignItems: "flex-start", gap: 10 }}>
                   <AlertCircle size={16} style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }} />
@@ -545,7 +565,6 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                           <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{c.completed ? "✓ Finished" : `${100 - c.progress}% left`}</span>
                         </div>
                       </div>
-                      {/* Circle progress */}
                       <div className="hide-sm" style={{ flexShrink: 0, position: "relative", width: 48, height: 48 }}>
                         <svg width="48" height="48" style={{ transform: "rotate(-90deg)" }}>
                           <circle cx="24" cy="24" r="20" fill="none" stroke="#e2e8f0" strokeWidth="5" />
@@ -646,13 +665,11 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                   <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>{payments.length} payment record{payments.length !== 1 ? "s" : ""}</p>
                 </div>
               </div>
-
-              {/* Summary cards */}
               <div style={{ display: "grid", gap: 12, marginBottom: 20 }} className="g3">
                 {[
-                  { label: "Total Paid",    value: `₦${payments.filter(p => p.status === "approved").reduce((a, p) => a + p.amount, 0).toLocaleString()}`, color: "#10b981", bg: "#10b98115" },
-                  { label: "Pending",       value: pendingPayments.length,                                                                                   color: "#f59e0b", bg: "#f59e0b15" },
-                  { label: "Rejected",      value: payments.filter(p => p.status === "rejected").length,                                                     color: "#ef4444", bg: "#ef444415" },
+                  { label: "Total Paid", value: `₦${payments.filter(p => p.status === "approved").reduce((a, p) => a + p.amount, 0).toLocaleString()}`, color: "#10b981", bg: "#10b98115" },
+                  { label: "Pending",    value: pendingPayments.length,                                                                                   color: "#f59e0b", bg: "#f59e0b15" },
+                  { label: "Rejected",   value: payments.filter(p => p.status === "rejected").length,                                                     color: "#ef4444", bg: "#ef444415" },
                 ].map(s => (
                   <div key={s.label} className="card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -665,8 +682,6 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                   </div>
                 ))}
               </div>
-
-              {/* Payments table */}
               <div className="card" style={{ overflow: "hidden" }}>
                 {loadingP ? [1, 2, 3].map(i => <SkeletonRow key={i} />) :
                   payments.length === 0 ? (
@@ -679,13 +694,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                     <div style={{ overflowX: "auto" }}>
                       <table className="ptable">
                         <thead>
-                          <tr>
-                            <th>Course</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Note</th>
-                          </tr>
+                          <tr><th>Course</th><th>Amount</th><th>Status</th><th>Date</th><th>Note</th></tr>
                         </thead>
                         <tbody>
                           {payments.map(p => (
