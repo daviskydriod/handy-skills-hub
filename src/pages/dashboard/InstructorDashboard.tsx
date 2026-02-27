@@ -42,12 +42,11 @@
 // ── FULL FILE BELOW (complete rewrite with HandyGidi branding) ──
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, BookOpen, PlusCircle, Users, DollarSign,
   Trash2, EyeOff, Upload, X, Star, Edit2, RefreshCw, Search,
   Check, Clock, TrendingUp, AlertCircle, ShieldCheck, Bell,
-  BarChart2, ChevronRight, Loader, Info, LogOut,
+  BarChart2, ChevronRight, Loader, Info,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -56,13 +55,11 @@ import {
   updateCourseWithFile, deleteCourse, type Course,
 } from "@/api/courses";
 import { getCategories, type Category } from "@/api/categories";
-import logo from "@/assets/logo.jpeg";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
-const GOLD2 = "#CA8A04";
-const BG    = "#f0f4f8";
 
 type TabType = "overview" | "courses" | "add" | "earnings";
 
@@ -106,8 +103,7 @@ const SkeletonRow = () => (
 );
 
 export default function InstructorDashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [tab,        setTab]        = useState<TabType>("overview");
   const [courses,    setCourses]    = useState<Course[]>([]);
@@ -240,10 +236,9 @@ export default function InstructorDashboard() {
   ];
 
   return (
-    <div style={{ minHeight:"100vh", background:BG, fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
+    <DashboardLayout>
+    <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Sora:wght@700;800&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0;}
         .inp{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-family:inherit;color:${NAVY};outline:none;background:#fff;transition:border-color .2s;}
         .inp:focus{border-color:${TEAL};}
         .inp::placeholder{color:#94a3b8;}
@@ -264,30 +259,8 @@ export default function InstructorDashboard() {
         @keyframes spin{to{transform:rotate(360deg);}}
         .spin{animation:spin 1s linear infinite;}
         @media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)!important;}.g3{grid-template-columns:repeat(2,1fr)!important;}.hm{display:none!important;}}
-        @media(max-width:560px){.g4{grid-template-columns:repeat(2,1fr)!important;}.g3{grid-template-columns:1fr!important;}.fgrid{grid-template-columns:1fr!important;}.nav-name{display:none!important;}.tab-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}}
+        @media(max-width:560px){.g4{grid-template-columns:repeat(2,1fr)!important;}.g3{grid-template-columns:1fr!important;}.fgrid{grid-template-columns:1fr!important;}.tab-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}}
       `}</style>
-
-      {/* ── NAV ── */}
-      <nav style={{ background:"#fff", borderBottom:"1px solid #e8edf2", position:"sticky", top:0, zIndex:50, boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
-        <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 16px", height:60, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <img src={logo} alt="HandyGidi" style={{ width:34, height:34, borderRadius:10, objectFit:"contain", border:"2px solid #EAB30840" }} />
-            <div>
-              <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:15, color:NAVY, lineHeight:1.1 }}>HandyGidi</p>
-              <p style={{ fontSize:10, fontWeight:600, color:GOLD2, lineHeight:1 }}>Training Centre</p>
-            </div>
-            <span style={{ fontSize:10, fontWeight:700, padding:"2px 9px", borderRadius:99, background:TEAL+"18", color:TEAL, border:`1px solid ${TEAL}30` }}>Instructor</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <button style={{ background:"none", border:"none", cursor:"pointer", padding:8, borderRadius:8, color:"#64748b" }}><Bell size={18}/></button>
-            <UserAvatar name={user?.name} size={34} />
-            <span className="nav-name" style={{ fontSize:13, fontWeight:600, color:NAVY }}>{user?.name}</span>
-            <button onClick={() => { logout(); navigate("/"); }} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:5, fontSize:12, fontWeight:600, color:"#94a3b8", fontFamily:"inherit", padding:"6px 10px", borderRadius:8 }}>
-              <LogOut size={13}/> <span className="nav-name">Sign out</span>
-            </button>
-          </div>
-        </div>
-      </nav>
 
       <div style={{ maxWidth:1200, margin:"0 auto", padding:"24px 16px" }}>
 
@@ -578,5 +551,6 @@ export default function InstructorDashboard() {
 
       </div>
     </div>
+    </DashboardLayout>
   );
 }
