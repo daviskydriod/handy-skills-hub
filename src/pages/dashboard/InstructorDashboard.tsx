@@ -55,7 +55,6 @@ import {
   updateCourseWithFile, deleteCourse, type Course,
 } from "@/api/courses";
 import { getCategories, type Category } from "@/api/categories";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
@@ -236,7 +235,7 @@ export default function InstructorDashboard() {
   ];
 
   return (
-    <DashboardLayout>
+   
     <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
       <style>{`
         .inp{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-family:inherit;color:${NAVY};outline:none;background:#fff;transition:border-color .2s;}
@@ -551,6 +550,6 @@ export default function InstructorDashboard() {
 
       </div>
     </div>
-    </DashboardLayout>
+
   );
 }
