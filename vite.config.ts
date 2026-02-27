@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc"; // ✅ -swc not just -react
 import path from "path";
 
 export default defineConfig({
@@ -8,6 +8,6 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ["react", "react-dom"], // ✅ ADD THIS LINE
+    dedupe: ["react", "react-dom"], // ✅ keep this
   },
 });
