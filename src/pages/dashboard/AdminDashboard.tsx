@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import client from "@/api/client";
 import { deleteCourse, updateCourse, type Course } from "@/api/courses";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface ApiUser {
   id: number; name: string; email: string;
@@ -38,9 +39,6 @@ type TabType = "overview" | "payments" | "users" | "courses";
 const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
-const GOLD  = "#EAB308";
-const GOLD2 = "#CA8A04";
-const BG    = "#f0f4f8";
 
 /* ── helpers ── */
 const CourseThumb = ({ image, title, size = 40 }: { image?: string | null; title?: string; size?: number }) => {
@@ -244,10 +242,9 @@ export default function AdminDashboard() {
 
   /* ══ RENDER ══ */
   return (
-    <div style={{ minHeight:"100vh", background:BG, fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
+    <DashboardLayout>
+    <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Sora:wght@700;800&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0;}
         .card{background:#fff;border-radius:16px;border:1px solid #e8edf2;}
         .btna{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;border-radius:99px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;transition:all .15s;white-space:nowrap;}
         .btna:hover{background:#a7f3d0;}
@@ -281,7 +278,7 @@ export default function AdminDashboard() {
         }
       `}</style>
 
-      {/* ── Receipt modal ── */}
+      {/* ── Modals (outside scroll container) ── */}
       {viewReceipt && (
         <div className="modal-overlay" onClick={() => setViewReceipt(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -692,5 +689,6 @@ export default function AdminDashboard() {
 
       </div>
     </div>
+    </DashboardLayout>
   );
 }
