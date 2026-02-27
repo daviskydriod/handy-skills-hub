@@ -10,7 +10,11 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { getMyEnrollments, type EnrolledCourse } from "@/api/enrollments";
 import { getCourses, type Course } from "@/api/courses";
-import client from "@/api/client";
+// ✅ FIX: Import submitPayment instead of using raw client.post in the component.
+//    The submitPayment function correctly sets Content-Type to undefined so
+//    axios auto-generates the multipart boundary — manual "multipart/form-data"
+//    was stripping the boundary and making PHP receive empty $_POST / $_FILES.
+import { submitPayment } from "@/api/payments";
 
 const TEAL  = "#0d9488";
 const TEAL2 = "#0f766e";
@@ -94,23 +98,17 @@ const PaymentModal = ({
     }
     setSub(true);
     try {
+      // ✅ FIX: Build FormData and pass to submitPayment() from payments.ts.
+      //    submitPayment sets Content-Type: undefined so axios auto-adds the
+      //    multipart boundary. Previously this used client.post directly with
+      //    Content-Type: undefined inline — same fix, but now consistent with
+      //    the API layer and not duplicated in the component.
       const fd = new FormData();
-      // ✅ Append as plain strings — PHP reads these via $_POST
       fd.append("course_id", String(course.id));
       fd.append("amount",    String(course.price));
       fd.append("proof_image", file);
 
-      // ✅ Do NOT set Content-Type manually — axios must set it automatically
-      //    so the multipart boundary is included correctly.
-      //    Wrong:  { headers: { "Content-Type": "multipart/form-data" } }
-      //    Right:  let axios detect FormData and set the header itself
-      await client.post("/payments", fd, {
-        headers: {
-          // ✅ Explicitly DELETE the default application/json header
-          // so axios sets multipart/form-data with the correct boundary
-          "Content-Type": undefined,
-        },
-      });
+      await submitPayment(fd);
 
       setStep("done");
       onSubmitted();
