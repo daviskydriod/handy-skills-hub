@@ -3,12 +3,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   LayoutDashboard, BookOpen, Users, DollarSign, ShieldCheck,
   CheckCircle, XCircle, Clock, Eye, Trash2, Edit2, PlusCircle,
-  Search, RefreshCw, Star, AlertCircle,
+  Search, RefreshCw, Star,
   Upload, X, Check, Loader, ChevronDown, Plus, GripVertical,
   PlayCircle, Film, FileText, ChevronLeft,
-  Bell, LogOut, Menu, EyeOff, Layers,
+  Bell, LogOut, Menu, EyeOff,
   UserCheck, UserX, BadgeCheck, Ban,
-  CreditCard,
+  CreditCard, ExternalLink,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -41,11 +41,12 @@ interface AdminUser {
 interface Payment {
   id: number; user_id: number; course_id: number;
   amount: number; status: "pending" | "approved" | "rejected";
-  payment_method?: string; reference?: string; proof?: string;
+  payment_method?: string; reference?: string;
+  // ✅ FIX: API returns proof_image, not proof — handle both
+  proof?: string; proof_image?: string;
   created_at: string; updated_at?: string;
   user?: { name: string; email: string };
   course?: { title: string; image?: string };
-  // flat variants some APIs return
   user_name?: string; user_email?: string;
   course_title?: string; course_image?: string;
 }
@@ -58,22 +59,59 @@ const uid       = () => Math.random().toString(36).slice(2, 9);
 const mkLesson  = (): Lesson => ({ id: uid(), title: "", description: "", videoUrl: "", duration: "" });
 const mkModule  = (): Module => ({ id: uid(), title: "", description: "", lessons: [mkLesson()] });
 const mkPart    = (): Part   => ({ id: uid(), title: "", description: "", modules: [mkModule()] });
-const emptyForm = {
+
+// ✅ FIX: emptyForm is a factory function so each call returns fresh objects
+// (avoids shared reference mutations when resetForm reuses the same object)
+const makeEmptyForm = () => ({
   title: "", description: "", price: "", duration: "",
   lessons: "", catId: "", file: null as File | null,
   preview: null as string | null, parts: [mkPart()] as Part[],
-};
+});
+
 const fmt = (n: number) => `₦${(n ?? 0).toLocaleString()}`;
+
+// ✅ FIX: parseCourseContent now normalizes parsed parts to ensure every
+// part/module/lesson has a valid id, preventing .map() crashes on edit
+function ensureIds(parts: any[]): Part[] {
+  return (parts ?? []).map(p => ({
+    id:          p.id          ?? uid(),
+    title:       p.title       ?? "",
+    description: p.description ?? "",
+    modules: (p.modules ?? []).map((m: any) => ({
+      id:          m.id          ?? uid(),
+      title:       m.title       ?? "",
+      description: m.description ?? "",
+      lessons: (m.lessons ?? []).map((l: any) => ({
+        id:          l.id          ?? uid(),
+        title:       l.title       ?? "",
+        description: l.description ?? "",
+        videoUrl:    l.videoUrl    ?? l.video_url ?? "",
+        duration:    l.duration    ?? "",
+      })),
+    })),
+  }));
+}
 
 function parseCourseContent(raw: any): { parts: Part[] } | null {
   if (!raw) return null;
-  if (typeof raw === "string") { try { return JSON.parse(raw); } catch { return null; } }
-  if (typeof raw === "object") return raw;
+  let obj: any = raw;
+  if (typeof raw === "string") {
+    try { obj = JSON.parse(raw); } catch { return null; }
+  }
+  if (typeof obj === "object" && obj !== null && Array.isArray(obj.parts)) {
+    return { parts: ensureIds(obj.parts) };
+  }
   return null;
 }
+
 function ytId(url: string) {
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|embed\/|shorts\/))([^&?/\s]{11})/);
   return m ? m[1] : null;
+}
+
+// ✅ FIX: helper to get proof image URL regardless of field name
+function getProofUrl(p: Payment): string | null {
+  return p.proof_image ?? p.proof ?? null;
 }
 
 // ── Small UI pieces ────────────────────────────────────────────────────
@@ -237,7 +275,8 @@ export default function AdminDashboard() {
   const [editId,     setEditId]     = useState<number | null>(null);
   const [delId,      setDelId]      = useState<number | null>(null);
   const [searchQ,    setSearchQ]    = useState("");
-  const [form,       setForm]       = useState(emptyForm);
+  // ✅ FIX: use factory function so each reset creates fresh objects
+  const [form,       setForm]       = useState(makeEmptyForm);
   const [viewCourse, setViewCourse] = useState<Course | null>(null);
   const [statusF,    setStatusF]    = useState<"all"|"pending"|"live">("all");
   const [colParts,   setColParts]   = useState<Record<string,boolean>>({});
@@ -261,8 +300,9 @@ export default function AdminDashboard() {
   const [viewPayment, setViewPayment] = useState<Payment | null>(null);
   const [payActing,   setPayActing]   = useState<number | null>(null);
 
-  const sf = (k: keyof typeof emptyForm, v: any) => setForm(p => ({ ...p, [k]: v }));
-  const resetForm = () => { setForm(emptyForm); setEditId(null); setColParts({}); setColMods({}); };
+  const sf = (k: keyof ReturnType<typeof makeEmptyForm>, v: any) => setForm(p => ({ ...p, [k]: v }));
+  // ✅ FIX: resetForm uses factory to avoid shared reference
+  const resetForm = () => { setForm(makeEmptyForm()); setEditId(null); setColParts({}); setColMods({}); };
 
   // ── Normalize ─────────────────────────────────────────────────────
   const normalizeCourse = (c: any): Course => ({
@@ -369,9 +409,15 @@ export default function AdminDashboard() {
     } catch { toast({ title: "Failed to delete", variant: "destructive" }); }
     finally { setDelId(null); }
   };
+
+  // ✅ FIX: startEdit now correctly resets colParts/colMods AND ensures
+  // parsed parts always have valid IDs (via ensureIds inside parseCourseContent)
   const startEdit = (c: Course) => {
     const parsed = parseCourseContent(c.content);
-    const parts  = parsed?.parts?.length ? parsed.parts : [mkPart()];
+    // ensureIds is called inside parseCourseContent, so parts are always valid
+    const parts = parsed?.parts?.length ? parsed.parts : [mkPart()];
+    setColParts({});
+    setColMods({});
     setForm({
       title:       c.title       ?? "",
       description: c.description ?? "",
@@ -383,26 +429,34 @@ export default function AdminDashboard() {
       preview:     c.image ?? null,
       parts,
     });
-    setEditId(c.id); setViewCourse(null); setTab("add");
+    setEditId(c.id);
+    setViewCourse(null);
+    setTab("add");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // ── Payment actions ────────────────────────────────────────────────
+  // ✅ FIX: payments.php handles PUT/PATCH /api/payments/{id} with body { status }
+  // The old code tried PATCH /payments/{id}/approve first which doesn't exist,
+  // causing the try/catch fallback to also fail because the body was already sent.
+  // Now we go directly to the correct endpoint.
   const handlePayment = async (payment: Payment, action: "approved"|"rejected") => {
     setPayActing(payment.id);
     try {
-      // Try dedicated endpoint first, fall back to generic PUT
-      try {
-        await client.patch(`/payments/${payment.id}/${action === "approved" ? "approve" : "reject"}`);
-      } catch {
-        await client.put(`/payments/${payment.id}`, { status: action });
-      }
-      const updated = { ...payment, status: action };
-      setPayments(p=>p.map(x=>x.id===payment.id?updated:x));
-      if (viewPayment?.id===payment.id) setViewPayment(updated);
-      toast({ title: action==="approved" ? "Payment approved ✅" : "Payment rejected ❌" });
-    } catch { toast({ title: "Action failed", variant: "destructive" }); }
-    finally { setPayActing(null); }
+      await client.put(`/payments/${payment.id}`, { status: action });
+      const updated = { ...payment, status: action as Payment["status"] };
+      setPayments(p => p.map(x => x.id === payment.id ? updated : x));
+      if (viewPayment?.id === payment.id) setViewPayment(updated);
+      toast({ title: action === "approved" ? "Payment approved ✅" : "Payment rejected ❌" });
+    } catch (err: any) {
+      toast({
+        title: "Action failed",
+        description: err?.response?.data?.error ?? "Could not update payment status",
+        variant: "destructive",
+      });
+    } finally {
+      setPayActing(null);
+    }
   };
 
   // ── User actions ───────────────────────────────────────────────────
@@ -539,7 +593,14 @@ export default function AdminDashboard() {
         <nav style={{ flex:1, padding:"12px 8px", display:"flex", flexDirection:"column", gap:3, overflowY:"auto" }}>
           {navItems.map(({ key, label, icon:Icon, badge }) => (
             <button key={key}
-              onClick={() => { setTab(key as TabType); if(key==="add")resetForm(); if(key!=="add"&&key!=="courses")setViewCourse(null); if(key!=="users")setViewUser(null); if(key!=="payments")setViewPayment(null); }}
+              onClick={() => {
+                setTab(key as TabType);
+                // ✅ FIX: only resetForm when manually clicking "add" nav item (not from startEdit)
+                if (key === "add" && !editId) resetForm();
+                if (key !== "add" && key !== "courses") setViewCourse(null);
+                if (key !== "users") setViewUser(null);
+                if (key !== "payments") setViewPayment(null);
+              }}
               title={sideOpen?undefined:label} className="nib"
               style={{ justifyContent:sideOpen?"flex-start":"center", gap:sideOpen?10:0, background:tab===key?`linear-gradient(135deg,${GOLD},${GOLD2})`:"transparent", color:tab===key?NAVY:"#64748b", position:"relative" }}>
               <Icon size={16} />
@@ -582,7 +643,7 @@ export default function AdminDashboard() {
           {pending>0 && (
             <button onClick={() => { setTab("courses"); setStatusF("pending"); setViewCourse(null); }}
               style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", background:"#fef3c7", border:"1px solid #fde68a", borderRadius:99, cursor:"pointer", fontFamily:"inherit" }}>
-              <Clock size={11} style={{ color:"#92400e" }}/><span style={{ fontSize:11, fontWeight:700, color:"#92400e" }}>{pending} pending courses</span>
+              <Clock size={11} style={{ color:"#92400e" }}/><span style={{ fontSize:11, fontWeight:700, color:"#92400e" }}>{pending} pending</span>
             </button>
           )}
           {pendingPay>0 && (
@@ -614,7 +675,6 @@ export default function AdminDashboard() {
                 <Stat label="Registered Users" value={usersLoad?"—":(users.length||"—")}      icon={UserCheck}   color="#8b5cf6" bg="#8b5cf612" />
               </div>
 
-              {/* Pending courses */}
               {pending>0 && (
                 <div>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
@@ -640,7 +700,6 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Pending payments */}
               {pendingPay>0 && (
                 <div>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
@@ -668,7 +727,6 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Recent courses grid */}
               <div>
                 <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:14, color:NAVY, marginBottom:12 }}>📚 Recent Courses</h3>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))", gap:12 }}>
@@ -814,7 +872,7 @@ export default function AdminDashboard() {
                   <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:18, color:NAVY, marginBottom:4 }}>{editId?"Edit Course":"Create New Course"}</h2>
                   <p style={{ fontSize:12, color:"#64748b" }}>{editId?"Changes published immediately (admin override).":"Course published immediately without approval."}</p>
                 </div>
-                {editId && <button onClick={() => { resetForm(); setTab("courses"); }} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:4, color:"#64748b", fontSize:12, fontFamily:"inherit", fontWeight:600 }}><X size={13}/> Cancel</button>}
+                {editId && <button onClick={() => { resetForm(); setTab("courses"); }} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:4, color:"#64748b", fontSize:12, fontFamily:"inherit", fontWeight:600 }}><X size={13}/> Cancel Edit</button>}
               </div>
               <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:"11px 14px", display:"flex", gap:8, marginBottom:22, alignItems:"flex-start" }}>
                 <ShieldCheck size={14} style={{ color:"#16a34a", flexShrink:0, marginTop:1 }}/>
@@ -884,9 +942,10 @@ export default function AdminDashboard() {
                     </div>
                     <button type="button" onClick={addPart} className="ab"><Plus size={13}/> Add Part</button>
                   </div>
-                  {form.parts.map((part, pi) => {
+                  {/* ✅ FIX: Guard against empty parts array */}
+                  {(form.parts ?? []).map((part, pi) => {
                     const pc = colParts[part.id];
-                    const tl = part.modules.reduce((a,m)=>a+m.lessons.length,0);
+                    const tl = (part.modules ?? []).reduce((a,m)=>a+(m.lessons?.length??0),0);
                     return (
                       <div key={part.id} className="pb">
                         <div className="sh" style={{ background:NAVY+"06", borderBottom:pc?"none":"1px solid #e8edf2" }} onClick={() => setColParts(p=>({...p,[part.id]:!p[part.id]}))}>
@@ -894,7 +953,7 @@ export default function AdminDashboard() {
                           <div style={{ width:24, height:24, borderRadius:6, background:NAVY, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><span style={{ fontSize:10, fontWeight:800, color:"#fff" }}>{pi+1}</span></div>
                           <div style={{ flex:1, minWidth:0 }}>
                             <p style={{ fontWeight:700, fontSize:13, color:NAVY }}>{part.title||`Part ${pi+1}`}</p>
-                            <p style={{ fontSize:11, color:"#94a3b8" }}>{part.modules.length} modules · {tl} lessons</p>
+                            <p style={{ fontSize:11, color:"#94a3b8" }}>{(part.modules??[]).length} modules · {tl} lessons</p>
                           </div>
                           <ChevronDown size={14} style={{ color:"#94a3b8", transform:pc?"rotate(-90deg)":"none", transition:"transform .2s", flexShrink:0 }}/>
                           {form.parts.length>1 && <button type="button" onClick={e=>{e.stopPropagation();remPart(part.id);}} className="icn"><X size={13} style={{ color:"#ef4444" }}/></button>}
@@ -911,7 +970,7 @@ export default function AdminDashboard() {
                                 <input className="inp" value={part.description} onChange={e=>updPart(part.id,{description:e.target.value})} placeholder="Brief overview…" style={{ fontSize:12 }}/>
                               </div>
                             </div>
-                            {part.modules.map((mod, mi) => {
+                            {(part.modules ?? []).map((mod, mi) => {
                               const mk = `${part.id}|${mod.id}`;
                               const mc = colMods[mk];
                               return (
@@ -920,7 +979,7 @@ export default function AdminDashboard() {
                                     <div style={{ width:20, height:20, borderRadius:5, background:GOLD+"22", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><span style={{ fontSize:9, fontWeight:800, color:GOLD2 }}>{mi+1}</span></div>
                                     <div style={{ flex:1, minWidth:0 }}>
                                       <p style={{ fontWeight:700, fontSize:12, color:NAVY }}>{mod.title||`Module ${mi+1}`}</p>
-                                      <p style={{ fontSize:10, color:"#94a3b8" }}>{mod.lessons.length} lessons</p>
+                                      <p style={{ fontSize:10, color:"#94a3b8" }}>{(mod.lessons??[]).length} lessons</p>
                                     </div>
                                     <ChevronDown size={13} style={{ color:"#94a3b8", transform:mc?"rotate(-90deg)":"none", transition:"transform .2s", flexShrink:0 }}/>
                                     {part.modules.length>1 && <button type="button" onClick={e=>{e.stopPropagation();remMod(part.id,mod.id);}} className="icn"><X size={12} style={{ color:"#ef4444" }}/></button>}
@@ -937,8 +996,8 @@ export default function AdminDashboard() {
                                           <input className="inp" value={mod.description} onChange={e=>updMod(part.id,mod.id,{description:e.target.value})} placeholder="What's covered…" style={{ fontSize:12 }}/>
                                         </div>
                                       </div>
-                                      {mod.lessons.map((lesson, li) => {
-                                        const vid = ytId(lesson.videoUrl);
+                                      {(mod.lessons ?? []).map((lesson, li) => {
+                                        const vid = ytId(lesson.videoUrl ?? "");
                                         return (
                                           <div key={lesson.id} className="lb">
                                             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
@@ -1132,8 +1191,6 @@ export default function AdminDashboard() {
                   <RefreshCw size={11}/> Reload
                 </button>
               </div>
-
-              {/* Stats */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:16 }}>
                 {[
                   { label:"Pending",  v:payments.filter(p=>p.status==="pending").length,  color:"#f59e0b" },
@@ -1146,8 +1203,6 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
-
-              {/* Revenue banner */}
               <div style={{ background:`linear-gradient(135deg,${NAVY},${NAVY2})`, borderRadius:14, padding:"16px 20px", marginBottom:16, display:"flex", alignItems:"center", gap:14 }}>
                 <div style={{ width:44, height:44, borderRadius:12, background:GOLD+"22", display:"flex", alignItems:"center", justifyContent:"center" }}>
                   <DollarSign size={20} style={{ color:GOLD }}/>
@@ -1159,8 +1214,6 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               </div>
-
-              {/* Filters */}
               <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap" }}>
                 <div style={{ position:"relative", flex:1, minWidth:200 }}>
                   <Search size={13} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#94a3b8" }}/>
@@ -1172,7 +1225,6 @@ export default function AdminDashboard() {
                   </button>
                 ))}
               </div>
-
               <div className="card" style={{ overflow:"hidden" }}>
                 {payLoad ? [1,2,3,4].map(i=><SkelRow key={i}/>) : shownPayments.length===0
                   ? <div style={{ padding:"56px 24px", textAlign:"center" }}>
@@ -1234,7 +1286,7 @@ export default function AdminDashboard() {
                       { label:"Amount",         value:fmt(viewPayment.amount) },
                       { label:"Payment Method", value:viewPayment.payment_method??"—" },
                       { label:"Reference",      value:viewPayment.reference??"—" },
-                      { label:"Date",           value:new Date(viewPayment.created_at).toLocaleDateString("en-NG",{day:"numeric",month:"long",year:"numeric"}) },
+                      { label:"Submitted",      value:new Date(viewPayment.created_at).toLocaleDateString("en-NG",{day:"numeric",month:"long",year:"numeric"}) },
                     ].map(r => (
                       <div key={r.label} style={{ display:"flex", justifyContent:"space-between", padding:"10px 0", borderBottom:"1px solid #f1f5f9" }}>
                         <span style={{ fontSize:13, color:"#94a3b8" }}>{r.label}</span>
@@ -1243,16 +1295,46 @@ export default function AdminDashboard() {
                     ))}
                   </div>
 
-                  {/* Payment proof */}
-                  {viewPayment.proof && (
-                    <div className="card" style={{ padding:20 }}>
-                      <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:13, color:NAVY, marginBottom:12 }}>📎 Payment Proof</p>
-                      <img src={viewPayment.proof} alt="Payment proof" style={{ width:"100%", borderRadius:10, border:"1px solid #e2e8f0", objectFit:"contain", maxHeight:400 }}/>
-                      <a href={viewPayment.proof} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:10, fontSize:12, fontWeight:600, color:GOLD2, textDecoration:"none" }}>
-                        <Eye size={12}/> View full image
-                      </a>
-                    </div>
-                  )}
+                  {/* ✅ FIX: Use getProofUrl() helper — handles both proof and proof_image field names */}
+                  {(() => {
+                    const proofUrl = getProofUrl(viewPayment);
+                    if (!proofUrl) return (
+                      <div className="card" style={{ padding:20 }}>
+                        <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:13, color:NAVY, marginBottom:12 }}>📎 Payment Proof</p>
+                        <div style={{ background:"#f8fafc", border:"1.5px dashed #e2e8f0", borderRadius:10, padding:"32px 20px", textAlign:"center" }}>
+                          <FileText size={28} style={{ color:"#cbd5e1", margin:"0 auto 8px" }}/>
+                          <p style={{ fontSize:12, color:"#94a3b8" }}>No proof image uploaded</p>
+                        </div>
+                      </div>
+                    );
+                    // Build full URL if it's a relative path
+                    const fullUrl = proofUrl.startsWith("http")
+                      ? proofUrl
+                      : `https://api.handygiditrainingcentre.com${proofUrl}`;
+                    return (
+                      <div className="card" style={{ padding:20 }}>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+                          <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:13, color:NAVY }}>📎 Payment Proof</p>
+                          <a href={fullUrl} target="_blank" rel="noopener noreferrer"
+                            style={{ display:"inline-flex", alignItems:"center", gap:5, fontSize:11, fontWeight:700, color:GOLD2, textDecoration:"none", padding:"5px 12px", border:`1px solid ${GOLD}50`, borderRadius:8, background:GOLD+"10" }}>
+                            <ExternalLink size={11}/> Open Full Image
+                          </a>
+                        </div>
+                        <img
+                          src={fullUrl}
+                          alt="Payment proof"
+                          style={{ width:"100%", borderRadius:10, border:"1px solid #e2e8f0", objectFit:"contain", maxHeight:450, background:"#f8fafc" }}
+                          onError={e => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                            const msg = document.createElement("p");
+                            msg.style.cssText = "font-size:12px;color:#94a3b8;padding:20px;text-align:center";
+                            msg.textContent = "Image could not be loaded. Click 'Open Full Image' to view.";
+                            (e.target as HTMLImageElement).parentNode?.appendChild(msg);
+                          }}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="card" style={{ padding:18 }}>
@@ -1278,6 +1360,14 @@ export default function AdminDashboard() {
                         : "⏳ Pending review. Verify the proof then approve or reject."}
                     </p>
                   </div>
+                  {/* ✅ Quick proof link in sidebar too */}
+                  {getProofUrl(viewPayment) && (
+                    <a href={getProofUrl(viewPayment)!.startsWith("http")?getProofUrl(viewPayment)!:`https://api.handygiditrainingcentre.com${getProofUrl(viewPayment)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginTop:10, padding:"9px", border:"1px solid #e2e8f0", borderRadius:8, fontSize:12, fontWeight:600, color:"#64748b", textDecoration:"none", background:"#f8fafc" }}>
+                      <ExternalLink size={12}/> View Proof Image
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
