@@ -2,13 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
-
 import HandyGidiChat from './components/global/HandyGidiChat';
-
 
 // Pages — public
 import Index        from "./pages/Index";
@@ -25,7 +23,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AdminRegister from "./pages/AdminRegister";
 import AdminLogin    from "./pages/AdminLogin";
 
-// Pages — course player (full-screen, no DashboardLayout)
+// Pages — course player
 import StudentCoursePlayer from "./pages/StudentCoursePlayer";
 
 // Pages — dashboards
@@ -38,6 +36,15 @@ import Certificates    from "./pages/dashboard/Certificates";
 import Profile         from "./pages/dashboard/Profile";
 import StudentSettings from "./pages/dashboard/StudentSettings";
 
+// ── Only show chat on public pages ────────────────────────────────
+function ChatWrapper() {
+  const location = useLocation();
+  const hide = location.pathname.startsWith("/dashboard") ||
+               location.pathname.startsWith("/learn")     ||
+               location.pathname.startsWith("/admin");
+  return hide ? null : <HandyGidiChat />;
+}
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -46,8 +53,8 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <HandyGidiChat />
         <AuthProvider>
+          <ChatWrapper />
           <Routes>
 
             {/* ── Public ─────────────────────────────────────────── */}
@@ -64,68 +71,42 @@ const App = () => (
             <Route path="/admin/register" element={<AdminRegister />} />
             <Route path="/admin/login"    element={<AdminLogin />} />
 
-            {/* ── Course Player ───────────────────────────────────
-                Full-screen dark UI — NO DashboardLayout wrapper.
-                StudentCoursePlayer has its own header and sidebar. */}
+            {/* ── Course Player ─────────────────────────────────── */}
             <Route path="/learn/:id" element={
-              <ProtectedRoute>
-                <StudentCoursePlayer />
-              </ProtectedRoute>
+              <ProtectedRoute><StudentCoursePlayer /></ProtectedRoute>
             } />
 
-            {/* ── Student ─────────────────────────────────────────
-                StudentDashboard has its own built-in sidebar now.
-                Remove DashboardLayout to avoid double sidebars.    */}
+            {/* ── Student ───────────────────────────────────────── */}
             <Route path="/dashboard/student" element={
-              <ProtectedRoute>
-                <StudentDashboard />
-              </ProtectedRoute>
+              <ProtectedRoute><StudentDashboard /></ProtectedRoute>
             } />
             <Route path="/dashboard/my-courses" element={
-              <ProtectedRoute>
-                <StudentDashboard defaultTab="my-courses" />
-              </ProtectedRoute>
+              <ProtectedRoute><StudentDashboard defaultTab="my-courses" /></ProtectedRoute>
             } />
             <Route path="/dashboard/explore" element={
-              <ProtectedRoute>
-                <StudentDashboard defaultTab="explore" />
-              </ProtectedRoute>
+              <ProtectedRoute><StudentDashboard defaultTab="explore" /></ProtectedRoute>
             } />
             <Route path="/dashboard/payments" element={
-              <ProtectedRoute>
-                <StudentDashboard defaultTab="payments" />
-              </ProtectedRoute>
+              <ProtectedRoute><StudentDashboard defaultTab="payments" /></ProtectedRoute>
             } />
             <Route path="/dashboard/certificates" element={
-              <ProtectedRoute>
-                <DashboardLayout><Certificates /></DashboardLayout>
-              </ProtectedRoute>
+              <ProtectedRoute><DashboardLayout><Certificates /></DashboardLayout></ProtectedRoute>
             } />
             <Route path="/dashboard/profile" element={
-              <ProtectedRoute>
-                <DashboardLayout><Profile /></DashboardLayout>
-              </ProtectedRoute>
+              <ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>
             } />
             <Route path="/dashboard/settings" element={
-              <ProtectedRoute>
-                <DashboardLayout><StudentSettings /></DashboardLayout>
-              </ProtectedRoute>
+              <ProtectedRoute><DashboardLayout><StudentSettings /></DashboardLayout></ProtectedRoute>
             } />
 
-            {/* ── Instructor ──────────────────────────────────────
-                InstructorDashboard also has its own sidebar,
-                so remove DashboardLayout here too.               */}
+            {/* ── Instructor ────────────────────────────────────── */}
             <Route path="/dashboard/instructor" element={
-              <ProtectedRoute>
-                <InstructorDashboard />
-              </ProtectedRoute>
+              <ProtectedRoute><InstructorDashboard /></ProtectedRoute>
             } />
 
-            {/* ── Admin ──────────────────────────────────────────── */}
+            {/* ── Admin ─────────────────────────────────────────── */}
             <Route path="/dashboard/admin" element={
-              <ProtectedRoute>
-                <DashboardLayout><AdminDashboard /></DashboardLayout>
-              </ProtectedRoute>
+              <ProtectedRoute><DashboardLayout><AdminDashboard /></DashboardLayout></ProtectedRoute>
             } />
 
             {/* 404 */}
