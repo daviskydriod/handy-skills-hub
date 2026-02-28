@@ -51,6 +51,17 @@ const emptyForm  = {
 };
 const fmt = (n: number) => `₦${n.toLocaleString()}`;
 
+// ── Parse content helper ───────────────────────────────────────────────
+// API may return content as a JSON string or already-parsed object
+function parseCourseContent(raw: any): { parts: Part[] } | null {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+  if (typeof raw === "object") return raw;
+  return null;
+}
+
 function ytId(url: string) {
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|embed\/|shorts\/))([^&?/\s]{11})/);
   return m ? m[1] : null;
@@ -112,21 +123,25 @@ const Stat = ({ label, value, icon: Icon, color, bg }: any) => (
 );
 
 // ── Course Content Viewer ──────────────────────────────────────────────
-const ContentViewer = ({ content }: { content: any }) => {
+const ContentViewer = ({ rawContent }: { rawContent: any }) => {
   const [openPart, setOpenPart] = useState<string | null>(null);
   const [openMod,  setOpenMod]  = useState<string | null>(null);
-  const parts: Part[] = content?.parts ?? [];
+
+  const parsed = parseCourseContent(rawContent);
+  const parts: Part[] = parsed?.parts ?? [];
+
   if (!parts.length) return (
     <div style={{ padding: "28px 0", textAlign: "center" }}>
       <BookOpen size={28} style={{ color: "#cbd5e1", margin: "0 auto 8px" }} />
       <p style={{ fontSize: 12, color: "#94a3b8" }}>No course content uploaded yet.</p>
     </div>
   );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {parts.map((part, pi) => (
-        <div key={part.id} style={{ border: "1.5px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
-          <button onClick={() => setOpenPart(openPart === part.id ? null : part.id)}
+        <div key={part.id ?? pi} style={{ border: "1.5px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
+          <button onClick={() => setOpenPart(openPart === (part.id ?? String(pi)) ? null : (part.id ?? String(pi)))}
             style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: NAVY + "08", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
             <div style={{ width: 26, height: 26, borderRadius: 7, background: NAVY, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>{pi + 1}</span>
@@ -134,20 +149,20 @@ const ContentViewer = ({ content }: { content: any }) => {
             <div style={{ flex: 1, textAlign: "left" }}>
               <p style={{ fontWeight: 700, fontSize: 13, color: NAVY }}>{part.title || `Part ${pi + 1}`}</p>
               <p style={{ fontSize: 11, color: "#94a3b8" }}>
-                {part.modules.length} module{part.modules.length !== 1 ? "s" : ""} ·{" "}
-                {part.modules.reduce((a, m) => a + m.lessons.length, 0)} lessons
+                {(part.modules ?? []).length} module{(part.modules ?? []).length !== 1 ? "s" : ""} ·{" "}
+                {(part.modules ?? []).reduce((a: number, m: Module) => a + (m.lessons ?? []).length, 0)} lessons
               </p>
             </div>
-            <ChevronDown size={14} style={{ color: "#94a3b8", transform: openPart === part.id ? "rotate(180deg)" : "none", transition: "transform .2s", flexShrink: 0 }} />
+            <ChevronDown size={14} style={{ color: "#94a3b8", transform: openPart === (part.id ?? String(pi)) ? "rotate(180deg)" : "none", transition: "transform .2s", flexShrink: 0 }} />
           </button>
 
-          {openPart === part.id && (
+          {openPart === (part.id ?? String(pi)) && (
             <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
               {part.description && <p style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>{part.description}</p>}
-              {part.modules.map((mod, mi) => {
-                const mk = `${part.id}|${mod.id}`;
+              {(part.modules ?? []).map((mod, mi) => {
+                const mk = `${part.id ?? pi}|${mod.id ?? mi}`;
                 return (
-                  <div key={mod.id} style={{ border: "1px solid #f1f5f9", borderRadius: 10, overflow: "hidden" }}>
+                  <div key={mod.id ?? mi} style={{ border: "1px solid #f1f5f9", borderRadius: 10, overflow: "hidden" }}>
                     <button onClick={() => setOpenMod(openMod === mk ? null : mk)}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#f8fafc", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
                       <div style={{ width: 22, height: 22, borderRadius: 6, background: GOLD + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -155,17 +170,17 @@ const ContentViewer = ({ content }: { content: any }) => {
                       </div>
                       <div style={{ flex: 1, textAlign: "left" }}>
                         <p style={{ fontWeight: 700, fontSize: 12, color: NAVY }}>{mod.title || `Module ${mi + 1}`}</p>
-                        <p style={{ fontSize: 10, color: "#94a3b8" }}>{mod.lessons.length} lessons</p>
+                        <p style={{ fontSize: 10, color: "#94a3b8" }}>{(mod.lessons ?? []).length} lessons</p>
                       </div>
                       <ChevronDown size={13} style={{ color: "#94a3b8", transform: openMod === mk ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
                     </button>
 
                     {openMod === mk && (
                       <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-                        {mod.lessons.map((lesson, li) => {
-                          const vid = ytId(lesson.videoUrl);
+                        {(mod.lessons ?? []).map((lesson, li) => {
+                          const vid = ytId(lesson.videoUrl ?? "");
                           return (
-                            <div key={lesson.id} style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 8, padding: "11px 13px" }}>
+                            <div key={lesson.id ?? li} style={{ background: "#fff", border: "1px solid #eef2f7", borderRadius: 8, padding: "11px 13px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                                 <PlayCircle size={13} style={{ color: GOLD2 }} />
                                 <span style={{ fontWeight: 700, fontSize: 12, color: NAVY, flex: 1 }}>
@@ -227,62 +242,100 @@ export default function AdminDashboard() {
   const sf = (k: keyof typeof emptyForm, v: any) => setForm(p => ({ ...p, [k]: v }));
   const resetForm = () => { setForm(emptyForm); setEditId(null); setColParts({}); setColMods({}); };
 
+  // ── Normalize course fields from API ──────────────────────────────
+  // API may return snake_case or different field names; normalize here
+  const normalizeCourse = (c: any): Course => ({
+    ...c,
+    // Normalize is_published to boolean
+    is_published: Boolean(c.is_published),
+    // Normalize enrolled — API might use enrolled_count or enrollments_count
+    enrolled: c.enrolled ?? c.enrolled_count ?? c.enrollments_count ?? 0,
+    // Normalize lessons — API might use lessons_count
+    lessons: c.lessons ?? c.lessons_count ?? 0,
+    // Normalize rating
+    rating: c.rating ?? c.average_rating ?? 0,
+    // Keep content as-is (string or object) — parseCourseContent handles both
+    content: c.content,
+  });
+
   // ── Fetch ──────────────────────────────────────────────────────────
   const loadCourses = useCallback(async () => {
     setLoading(true);
-    try { const r = await getCourses({ limit: 200 }); setCourses(r.courses); }
-    catch { toast({ title: "Failed to load courses", variant: "destructive" }); }
-    finally { setLoading(false); }
+    try {
+      const r = await getCourses({ limit: 200 });
+      // Support both { courses: [] } and direct array responses
+      const raw = r.courses ?? r.data ?? r ?? [];
+      setCourses(Array.isArray(raw) ? raw.map(normalizeCourse) : []);
+    } catch (err: any) {
+      toast({ title: "Failed to load courses", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const loadUsers = useCallback(async () => {
     setUsersLoad(true);
-    try { const r = await client.get("/users"); setUsers(r.data?.users ?? r.data ?? []); }
-    catch { toast({ title: "Failed to load users", variant: "destructive" }); }
-    finally { setUsersLoad(false); }
+    try {
+      const r = await client.get("/users");
+      // Support { users: [] }, { data: [] }, or direct array
+      const raw = r.data?.users ?? r.data?.data ?? r.data ?? [];
+      setUsers(Array.isArray(raw) ? raw : []);
+    } catch (err: any) {
+      toast({ title: "Failed to load users", variant: "destructive" });
+    } finally {
+      setUsersLoad(false);
+    }
   }, []);
 
   const loadCats = useCallback(async () => {
-    try { setCategories(await getCategories()); } catch {}
+    try {
+      const cats = await getCategories();
+      setCategories(Array.isArray(cats) ? cats : []);
+    } catch {}
   }, []);
 
   useEffect(() => { loadCourses(); loadCats(); }, [loadCourses, loadCats]);
   useEffect(() => { if (tab === "users") loadUsers(); }, [tab, loadUsers]);
 
   // ── Derived stats ─────────────────────────────────────────────────
-  const pending    = courses.filter(c => !c.is_published).length;
-  const live       = courses.filter(c =>  c.is_published).length;
-  const totalEnrl  = courses.reduce((a, c) => a + c.enrolled, 0);
-  const totalRev   = courses.reduce((a, c) => a + c.price * c.enrolled, 0);
-  const avgRating  = courses.length ? (courses.reduce((a, c) => a + c.rating, 0) / courses.length).toFixed(1) : "—";
+  const pending   = courses.filter(c => !c.is_published).length;
+  const live      = courses.filter(c =>  c.is_published).length;
+  const totalEnrl = courses.reduce((a, c) => a + (c.enrolled ?? 0), 0);
+  const totalRev  = courses.reduce((a, c) => a + ((c.price ?? 0) * (c.enrolled ?? 0)), 0);
+  const avgRating = courses.length
+    ? (courses.reduce((a, c) => a + (c.rating ?? 0), 0) / courses.length).toFixed(1)
+    : "—";
 
   const shownCourses = courses.filter(c => {
-    const q = c.title.toLowerCase().includes(searchQ.toLowerCase()) || (c.category ?? "").toLowerCase().includes(searchQ.toLowerCase());
+    const q = (c.title ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
+              (c.category ?? "").toLowerCase().includes(searchQ.toLowerCase());
     const s = statusF === "all" || (statusF === "live" ? !!c.is_published : !c.is_published);
     return q && s;
   });
   const shownUsers = users.filter(u =>
-    u.name.toLowerCase().includes(userQ.toLowerCase()) ||
-    u.email.toLowerCase().includes(userQ.toLowerCase())
+    (u.name ?? "").toLowerCase().includes(userQ.toLowerCase()) ||
+    (u.email ?? "").toLowerCase().includes(userQ.toLowerCase())
   );
 
   // ── Course actions ─────────────────────────────────────────────────
   const approve = async (c: Course) => {
     try {
       await updateCourse(c.id, { is_published: 1 });
-      setCourses(p => p.map(x => x.id === c.id ? { ...x, is_published: true } : x));
-      if (viewCourse?.id === c.id) setViewCourse(prev => prev ? { ...prev, is_published: true } : null);
+      const updated = normalizeCourse({ ...c, is_published: 1 });
+      setCourses(p => p.map(x => x.id === c.id ? updated : x));
+      if (viewCourse?.id === c.id) setViewCourse(updated);
       toast({ title: `"${c.title}" is now live ✅` });
-    } catch { toast({ title: "Failed", variant: "destructive" }); }
+    } catch { toast({ title: "Failed to publish", variant: "destructive" }); }
   };
 
   const unpublish = async (c: Course) => {
     try {
       await updateCourse(c.id, { is_published: 0 });
-      setCourses(p => p.map(x => x.id === c.id ? { ...x, is_published: false } : x));
-      if (viewCourse?.id === c.id) setViewCourse(prev => prev ? { ...prev, is_published: false } : null);
+      const updated = normalizeCourse({ ...c, is_published: 0 });
+      setCourses(p => p.map(x => x.id === c.id ? updated : x));
+      if (viewCourse?.id === c.id) setViewCourse(updated);
       toast({ title: "Course unpublished" });
-    } catch { toast({ title: "Failed", variant: "destructive" }); }
+    } catch { toast({ title: "Failed to unpublish", variant: "destructive" }); }
   };
 
   const handleDelete = async (id: number, title: string) => {
@@ -298,13 +351,24 @@ export default function AdminDashboard() {
   };
 
   const startEdit = (c: Course) => {
+    // Parse content regardless of whether it's a string or object
+    const parsed = parseCourseContent(c.content);
+    const parts = parsed?.parts?.length ? parsed.parts : [mkPart()];
+
     setForm({
-      title: c.title, description: c.description, price: String(c.price),
-      duration: c.duration ?? "", lessons: String(c.lessons),
-      catId: String(c.category_id ?? ""), file: null, preview: c.image,
-      parts: (c as any).content?.parts?.length ? (c as any).content.parts : [mkPart()],
+      title:       c.title ?? "",
+      description: c.description ?? "",
+      price:       String(c.price ?? ""),
+      duration:    c.duration ?? "",
+      lessons:     String(c.lessons ?? c.lessons_count ?? ""),
+      catId:       String(c.category_id ?? ""),
+      file:        null,
+      preview:     c.image ?? null,
+      parts,
     });
-    setEditId(c.id); setViewCourse(null); setTab("add");
+    setEditId(c.id);
+    setViewCourse(null);
+    setTab("add");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -318,64 +382,78 @@ export default function AdminDashboard() {
       if (editId) {
         if (form.file) {
           const fd = new FormData();
-          fd.append("title", form.title); fd.append("description", form.description);
-          fd.append("price", form.price || "0"); fd.append("duration", form.duration);
-          fd.append("lessons_count", form.lessons || "0"); fd.append("category_id", form.catId);
-          fd.append("is_published", "1"); fd.append("thumbnail", form.file); fd.append("content", contentJSON);
+          fd.append("title",         form.title);
+          fd.append("description",   form.description);
+          fd.append("price",         form.price || "0");
+          fd.append("duration",      form.duration);
+          fd.append("lessons_count", form.lessons || "0");
+          fd.append("category_id",   form.catId);
+          fd.append("is_published",  "1");
+          fd.append("thumbnail",     form.file);
+          fd.append("content",       contentJSON);
           await updateCourseWithFile(editId, fd);
         } else {
           await updateCourse(editId, {
-            title: form.title, description: form.description, price: parseFloat(form.price || "0"),
-            duration: form.duration, lessons_count: parseInt(form.lessons || "0"),
-            category_id: form.catId || null, is_published: 1, content: contentJSON,
+            title:         form.title,
+            description:   form.description,
+            price:         parseFloat(form.price || "0"),
+            duration:      form.duration,
+            lessons_count: parseInt(form.lessons || "0"),
+            category_id:   form.catId || null,
+            is_published:  1,
+            content:       contentJSON,
           });
         }
         toast({ title: "Course updated & published ✅" });
       } else {
         const fd = new FormData();
-        fd.append("title", form.title); fd.append("description", form.description);
-        fd.append("price", form.price || "0"); fd.append("duration", form.duration);
-        fd.append("lessons_count", form.lessons || "0"); fd.append("category_id", form.catId);
-        fd.append("is_published", "1"); fd.append("content", contentJSON);
+        fd.append("title",         form.title);
+        fd.append("description",   form.description);
+        fd.append("price",         form.price || "0");
+        fd.append("duration",      form.duration);
+        fd.append("lessons_count", form.lessons || "0");
+        fd.append("category_id",   form.catId);
+        fd.append("is_published",  "1");
+        fd.append("content",       contentJSON);
         if (form.file) fd.append("thumbnail", form.file);
         await createCourse(fd);
         toast({ title: "Course created & published 🎉" });
       }
       resetForm(); loadCourses(); setTab("courses");
     } catch (err: any) {
-      toast({ title: err.response?.data?.error ?? "Failed to save", variant: "destructive" });
+      toast({ title: err?.response?.data?.error ?? err?.message ?? "Failed to save", variant: "destructive" });
     } finally { setSaving(false); }
   };
 
   // ── Part / Module / Lesson helpers ────────────────────────────────
   const updPart = (pid: string, d: Partial<Part>) =>
     sf("parts", form.parts.map(p => p.id === pid ? { ...p, ...d } : p));
-  const addPart    = () => sf("parts", [...form.parts, mkPart()]);
-  const remPart    = (pid: string) => sf("parts", form.parts.filter(p => p.id !== pid));
-  const addMod     = (pid: string) => updPart(pid, { modules: [...form.parts.find(p => p.id === pid)!.modules, mkModule()] });
-  const remMod     = (pid: string, mid: string) => updPart(pid, { modules: form.parts.find(p => p.id === pid)!.modules.filter(m => m.id !== mid) });
-  const updMod     = (pid: string, mid: string, d: Partial<Module>) =>
+  const addPart   = () => sf("parts", [...form.parts, mkPart()]);
+  const remPart   = (pid: string) => sf("parts", form.parts.filter(p => p.id !== pid));
+  const addMod    = (pid: string) => updPart(pid, { modules: [...form.parts.find(p => p.id === pid)!.modules, mkModule()] });
+  const remMod    = (pid: string, mid: string) => updPart(pid, { modules: form.parts.find(p => p.id === pid)!.modules.filter(m => m.id !== mid) });
+  const updMod    = (pid: string, mid: string, d: Partial<Module>) =>
     updPart(pid, { modules: form.parts.find(p => p.id === pid)!.modules.map(m => m.id === mid ? { ...m, ...d } : m) });
-  const addLesson  = (pid: string, mid: string) => {
+  const addLesson = (pid: string, mid: string) => {
     const mod = form.parts.find(p => p.id === pid)!.modules.find(m => m.id === mid)!;
     updMod(pid, mid, { lessons: [...mod.lessons, mkLesson()] });
   };
-  const remLesson  = (pid: string, mid: string, lid: string) => {
+  const remLesson = (pid: string, mid: string, lid: string) => {
     const mod = form.parts.find(p => p.id === pid)!.modules.find(m => m.id === mid)!;
     updMod(pid, mid, { lessons: mod.lessons.filter(l => l.id !== lid) });
   };
-  const updLesson  = (pid: string, mid: string, lid: string, d: Partial<Lesson>) => {
+  const updLesson = (pid: string, mid: string, lid: string, d: Partial<Lesson>) => {
     const mod = form.parts.find(p => p.id === pid)!.modules.find(m => m.id === mid)!;
     updMod(pid, mid, { lessons: mod.lessons.map(l => l.id === lid ? { ...l, ...d } : l) });
   };
 
   // ── Sidebar items ──────────────────────────────────────────────────
   const navItems = [
-    { key: "overview",  label: "Overview",      icon: LayoutDashboard, badge: 0 },
-    { key: "courses",   label: "All Courses",    icon: BookOpen,        badge: pending },
-    { key: "add",       label: editId ? "Edit Course" : "Add Course", icon: PlusCircle, badge: 0 },
-    { key: "users",     label: "Users",          icon: Users,           badge: 0 },
-    { key: "payments",  label: "Payments",       icon: DollarSign,      badge: 0 },
+    { key: "overview", label: "Overview",       icon: LayoutDashboard, badge: 0       },
+    { key: "courses",  label: "All Courses",     icon: BookOpen,        badge: pending },
+    { key: "add",      label: editId ? "Edit Course" : "Add Course", icon: PlusCircle, badge: 0 },
+    { key: "users",    label: "Users",           icon: Users,           badge: 0       },
+    { key: "payments", label: "Payments",        icon: DollarSign,      badge: 0       },
   ];
   const SW = sideOpen ? SIDEBAR_W : 64;
 
@@ -431,7 +509,11 @@ export default function AdminDashboard() {
         {/* Nav */}
         <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 3, overflowY: "auto" }}>
           {navItems.map(({ key, label, icon: Icon, badge }) => (
-            <button key={key} onClick={() => { setTab(key as TabType); if (key === "add") resetForm(); if (key !== "add" && key !== "courses") setViewCourse(null); }}
+            <button key={key} onClick={() => {
+              setTab(key as TabType);
+              if (key === "add") resetForm();
+              if (key !== "add" && key !== "courses") setViewCourse(null);
+            }}
               title={sideOpen ? undefined : label}
               className="nib"
               style={{
@@ -500,14 +582,14 @@ export default function AdminDashboard() {
           {tab === "overview" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <div style={{ display: "grid", gap: 12 }} className="g4">
-                <Stat label="Total Courses"   value={loading ? "—" : courses.length}                                 icon={BookOpen}    color={NAVY}      bg={NAVY + "12"} />
-                <Stat label="Live Courses"    value={loading ? "—" : live}                                           icon={CheckCircle} color="#22c55e"   bg="#22c55e12" />
-                <Stat label="Pending Review"  value={loading ? "—" : pending}                                        icon={Clock}       color="#f59e0b"   bg="#f59e0b12" />
-                <Stat label="Total Students"  value={loading ? "—" : totalEnrl.toLocaleString()}                     icon={Users}       color="#3b82f6"   bg="#3b82f612" />
-                <Stat label="Est. Revenue"    value={loading ? "—" : fmt(totalRev)}                                  icon={DollarSign}  color="#10b981"   bg="#10b98112" />
-                <Stat label="Avg Rating"      value={loading ? "—" : avgRating}                                      icon={Star}        color={GOLD2}     bg={GOLD + "15"} />
-                <Stat label="Categories"      value={loading ? "—" : new Set(courses.map(c => c.category)).size}     icon={Layers}      color="#8b5cf6"   bg="#8b5cf612" />
-                <Stat label="Registered Users" value={usersLoad ? "—" : users.length || "—"}                        icon={UserCheck}   color="#ec4899"   bg="#ec489912" />
+                <Stat label="Total Courses"    value={loading ? "—" : courses.length}                             icon={BookOpen}    color={NAVY}    bg={NAVY + "12"} />
+                <Stat label="Live Courses"     value={loading ? "—" : live}                                       icon={CheckCircle} color="#22c55e" bg="#22c55e12" />
+                <Stat label="Pending Review"   value={loading ? "—" : pending}                                    icon={Clock}       color="#f59e0b" bg="#f59e0b12" />
+                <Stat label="Total Students"   value={loading ? "—" : totalEnrl.toLocaleString()}                 icon={Users}       color="#3b82f6" bg="#3b82f612" />
+                <Stat label="Est. Revenue"     value={loading ? "—" : fmt(totalRev)}                              icon={DollarSign}  color="#10b981" bg="#10b98112" />
+                <Stat label="Avg Rating"       value={loading ? "—" : avgRating}                                  icon={Star}        color={GOLD2}   bg={GOLD + "15"} />
+                <Stat label="Categories"       value={loading ? "—" : new Set(courses.map(c => c.category)).size} icon={Layers}      color="#8b5cf6" bg="#8b5cf612" />
+                <Stat label="Registered Users" value={usersLoad ? "—" : users.length || "—"}                      icon={UserCheck}   color="#ec4899" bg="#ec489912" />
               </div>
 
               {/* Pending approvals */}
@@ -526,7 +608,7 @@ export default function AdminDashboard() {
                         <CourseThumb title={c.title} image={c.image} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                          <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.category || "—"} · {fmt(c.price)}</p>
+                          <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.category || "—"} · {fmt(c.price ?? 0)}</p>
                         </div>
                         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                           <button onClick={() => { setViewCourse(c); setTab("courses"); }} className="icn" title="View content"><Eye size={14} style={{ color: "#3b82f6" }} /></button>
@@ -552,12 +634,12 @@ export default function AdminDashboard() {
                           <CourseThumb title={c.title} image={c.image} size={40} />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontWeight: 700, fontSize: 12, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                            <p style={{ fontSize: 10, color: "#94a3b8" }}>{c.enrolled} students</p>
+                            <p style={{ fontSize: 10, color: "#94a3b8" }}>{c.enrolled ?? 0} students</p>
                           </div>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <StatusBadge published={!!c.is_published} />
-                          <span style={{ fontSize: 12, fontWeight: 700, color: NAVY }}>{fmt(c.price)}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: NAVY }}>{fmt(c.price ?? 0)}</span>
                         </div>
                       </div>
                     ))
@@ -586,7 +668,8 @@ export default function AdminDashboard() {
                   <input className="inp" value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search courses…" style={{ paddingLeft: 36 }} />
                 </div>
                 {(["all","live","pending"] as const).map(s => (
-                  <button key={s} onClick={() => setStatusF(s)} style={{ padding: "8px 16px", borderRadius: 99, border: "1px solid", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", transition: "all .15s", borderColor: statusF === s ? GOLD : "#e2e8f0", background: statusF === s ? GOLD + "15" : "#fff", color: statusF === s ? GOLD2 : "#64748b" }}>
+                  <button key={s} onClick={() => setStatusF(s)}
+                    style={{ padding: "8px 16px", borderRadius: 99, border: "1px solid", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", transition: "all .15s", borderColor: statusF === s ? GOLD : "#e2e8f0", background: statusF === s ? GOLD + "15" : "#fff", color: statusF === s ? GOLD2 : "#64748b" }}>
                     {s === "all" ? `All (${courses.length})` : s === "live" ? `Live (${live})` : `Pending (${pending})`}
                   </button>
                 ))}
@@ -602,7 +685,7 @@ export default function AdminDashboard() {
                         <CourseThumb title={c.title} image={c.image} size={46} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                          <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.category || "—"} · {c.enrolled} students · {fmt(c.price)}</p>
+                          <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.category || "—"} · {c.enrolled ?? 0} students · {fmt(c.price ?? 0)}</p>
                         </div>
                         <StatusBadge published={!!c.is_published} />
                         <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
@@ -650,20 +733,20 @@ export default function AdminDashboard() {
                     )}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
                       {[
-                        { label: "Price",    value: viewCourse.price === 0 ? "Free" : fmt(viewCourse.price) },
-                        { label: "Students", value: viewCourse.enrolled },
-                        { label: "Lessons",  value: viewCourse.lessons },
+                        { label: "Price",    value: (viewCourse.price === 0 ? "Free" : fmt(viewCourse.price ?? 0)) },
+                        { label: "Students", value: viewCourse.enrolled ?? 0 },
+                        { label: "Lessons",  value: viewCourse.lessons ?? 0 },
                         { label: "Rating",   value: viewCourse.rating || "—" },
                       ].map(s => (
                         <div key={s.label} style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
                           <p style={{ fontSize: 10, color: "#94a3b8", marginBottom: 4 }}>{s.label}</p>
-                          <p style={{ fontWeight: 800, fontSize: 15, color: NAVY }}>{s.value}</p>
+                          <p style={{ fontWeight: 800, fontSize: 15, color: NAVY }}>{String(s.value)}</p>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Course content */}
+                  {/* Course content — passes raw content, viewer handles parse */}
                   <div className="card" style={{ padding: 20 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                       <h3 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 14, color: NAVY }}>📚 Course Content</h3>
@@ -671,7 +754,7 @@ export default function AdminDashboard() {
                         <Edit2 size={11} /> Edit Content
                       </button>
                     </div>
-                    <ContentViewer content={(viewCourse as any).content} />
+                    <ContentViewer rawContent={viewCourse.content} />
                   </div>
                 </div>
 
@@ -703,10 +786,10 @@ export default function AdminDashboard() {
                   <div className="card" style={{ padding: 18 }}>
                     <p style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>Details</p>
                     {[
-                      { label: "Duration",    value: viewCourse.duration || "—" },
-                      { label: "Category",    value: viewCourse.category  || "—" },
-                      { label: "Instructor",  value: `ID: ${viewCourse.instructor_id}` },
-                      { label: "Course ID",   value: `#${viewCourse.id}` },
+                      { label: "Duration",   value: viewCourse.duration   || "—" },
+                      { label: "Category",   value: viewCourse.category   || "—" },
+                      { label: "Instructor", value: `ID: ${viewCourse.instructor_id}` },
+                      { label: "Course ID",  value: `#${viewCourse.id}` },
                     ].map(r => (
                       <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
                         <span style={{ fontSize: 12, color: "#94a3b8" }}>{r.label}</span>
@@ -977,9 +1060,9 @@ export default function AdminDashboard() {
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
                 {[
-                  { label: "Students",    v: users.filter(u => u.role === "student").length },
+                  { label: "Students",    v: users.filter(u => u.role === "student").length    },
                   { label: "Instructors", v: users.filter(u => u.role === "instructor").length },
-                  { label: "Admins",      v: users.filter(u => u.role === "admin").length },
+                  { label: "Admins",      v: users.filter(u => u.role === "admin").length      },
                 ].map(s => (
                   <div key={s.label} className="card" style={{ padding: 14, textAlign: "center" }}>
                     <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 22, color: NAVY }}>{usersLoad ? "—" : s.v}</p>
