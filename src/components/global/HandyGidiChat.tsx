@@ -9,7 +9,7 @@ const NAVY  = '#0b1f3a';
 const NAVY2 = '#0f2d56';
 const GOLD  = '#EAB308';
 const GOLD2 = '#CA8A04';
-const WA_NUMBER = '2347051094001'; // WhatsApp number (international format, no +)
+const WA_NUMBER = '2347051094001';
 
 // ── FAQ DATA ──────────────────────────────────────────────────────────────────
 const FAQS = [
@@ -123,126 +123,136 @@ export default function HandyGidiChat() {
 
         /* ── FAB ── */
         .hgc-fab{
-          position:fixed;bottom:24px;right:24px;z-index:9998;
-          width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;
+          position:fixed;bottom:20px;right:20px;z-index:9998;
+          width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
           background:linear-gradient(135deg,${GOLD},${GOLD2});
           box-shadow:0 6px 28px rgba(234,179,8,.6);
           display:flex;align-items:center;justify-content:center;
           transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;
         }
-        .hgc-fab:hover{transform:scale(1.12);box-shadow:0 10px 40px rgba(234,179,8,.75)}
-        .hgc-fab-ico{font-size:26px;line-height:1;transition:transform .3s}
+        .hgc-fab:hover{transform:scale(1.1);box-shadow:0 10px 40px rgba(234,179,8,.75)}
+        .hgc-fab-ico{font-size:22px;line-height:1;transition:transform .3s}
         .hgc-fab.is-open .hgc-fab-ico{transform:rotate(45deg)}
         .hgc-badge{
           position:absolute;top:-4px;right:-4px;
-          width:22px;height:22px;border-radius:50%;
-          background:#ef4444;color:#fff;font-size:11px;font-weight:800;
+          width:20px;height:20px;border-radius:50%;
+          background:#ef4444;color:#fff;font-size:10px;font-weight:800;
           display:flex;align-items:center;justify-content:center;
-          border:2.5px solid #fff;
+          border:2px solid #fff;
           animation:hgcPop .3s cubic-bezier(.34,1.56,.64,1);
         }
         @keyframes hgcPop{from{transform:scale(0)}to{transform:scale(1)}}
 
-        /* ── PANEL ── */
+        /* ── PANEL ──
+           Key fix: use calc(100vh - 100px) as the max-height so it never
+           overflows the viewport regardless of screen size.
+           bottom: 86px puts it just above the FAB (56px + 20px gap + 10px).        */
         .hgc-panel{
-          position:fixed;bottom:100px;right:24px;z-index:9997;
-          width:370px;max-width:calc(100vw - 32px);
-          background:#fff;border-radius:20px;
+          position:fixed;
+          bottom:86px;
+          right:20px;
+          z-index:9997;
+          width:360px;
+          max-width:calc(100vw - 32px);
+          /* Never taller than viewport minus FAB + safe margins */
+          height:calc(100vh - 110px);
+          max-height:520px;
+          background:#fff;
+          border-radius:20px;
           box-shadow:0 24px 80px rgba(11,31,58,.28);
-          display:flex;flex-direction:column;overflow:hidden;
+          display:flex;
+          flex-direction:column;
+          overflow:hidden;
           animation:hgcSlide .35s cubic-bezier(.34,1.4,.64,1);
-          max-height:540px;
         }
-        @keyframes hgcSlide{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes hgcSlide{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 
         /* ── HEADER ── */
         .hgc-hdr{
           background:linear-gradient(135deg,${NAVY},${NAVY2});
-          padding:16px 18px;position:relative;overflow:hidden;flex-shrink:0;
+          padding:14px 16px;position:relative;overflow:hidden;flex-shrink:0;
         }
         .hgc-hdr::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(234,179,8,.08) 1px,transparent 1px);background-size:18px 18px}
         .hgc-hdr-inner{position:relative;z-index:1;display:flex;align-items:center;gap:10px}
-        .hgc-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${GOLD},${GOLD2});display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 2px 12px rgba(234,179,8,.5)}
+        .hgc-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,${GOLD},${GOLD2});display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 2px 12px rgba(234,179,8,.5)}
         .hgc-hdr-txt{flex:1}
-        .hgc-hdr-name{font-family:'Sora',sans-serif;font-weight:800;font-size:14px;color:#fff;letter-spacing:-.01em}
-        .hgc-hdr-status{font-size:11px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px;margin-top:2px}
-        .hgc-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
-        .hgc-close{background:rgba(255,255,255,.12);border:none;cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);font-size:16px;transition:background .15s;flex-shrink:0}
+        .hgc-hdr-name{font-family:'Sora',sans-serif;font-weight:800;font-size:13px;color:#fff;letter-spacing:-.01em}
+        .hgc-hdr-status{font-size:10px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px;margin-top:2px}
+        .hgc-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0}
+        .hgc-close{background:rgba(255,255,255,.12);border:none;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);font-size:15px;transition:background .15s;flex-shrink:0}
         .hgc-close:hover{background:rgba(255,255,255,.22)}
 
         /* ── TABS ── */
         .hgc-tabs{display:flex;border-bottom:1.5px solid #f1f5f9;flex-shrink:0}
-        .hgc-tab{flex:1;padding:11px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:700;color:#94a3b8;font-family:'DM Sans',sans-serif;transition:all .18s;border-bottom:2.5px solid transparent;margin-bottom:-1.5px}
+        .hgc-tab{flex:1;padding:9px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:700;color:#94a3b8;font-family:'DM Sans',sans-serif;transition:all .18s;border-bottom:2.5px solid transparent;margin-bottom:-1.5px}
         .hgc-tab.active{color:${NAVY};border-bottom-color:${GOLD}}
 
         /* ── FAQ ── */
-        .hgc-faq{flex:1;overflow-y:auto;padding:12px}
-        .hgc-faq::-webkit-scrollbar{width:4px}
+        .hgc-faq{flex:1;overflow-y:auto;padding:10px;min-height:0}
+        .hgc-faq::-webkit-scrollbar{width:3px}
         .hgc-faq::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:99px}
-        .hgc-cat{margin-bottom:8px;border:1.5px solid #f1f5f9;border-radius:12px;overflow:hidden}
-        .hgc-cat-hdr{width:100%;padding:11px 14px;border:none;background:#f8fafc;cursor:pointer;font-size:13px;font-weight:700;color:${NAVY};text-align:left;display:flex;align-items:center;justify-content:space-between;font-family:'DM Sans',sans-serif;transition:background .15s}
+        .hgc-cat{margin-bottom:7px;border:1.5px solid #f1f5f9;border-radius:11px;overflow:hidden}
+        .hgc-cat-hdr{width:100%;padding:10px 13px;border:none;background:#f8fafc;cursor:pointer;font-size:12.5px;font-weight:700;color:${NAVY};text-align:left;display:flex;align-items:center;justify-content:space-between;font-family:'DM Sans',sans-serif;transition:background .15s}
         .hgc-cat-hdr:hover{background:#f1f5f9}
-        .hgc-cat-arrow{font-size:11px;color:#94a3b8;transition:transform .2s}
+        .hgc-cat-arrow{font-size:10px;color:#94a3b8;transition:transform .2s}
         .hgc-cat-arrow.open{transform:rotate(180deg)}
-        .hgc-cat-items{padding:4px 0}
-        .hgc-q{width:100%;padding:9px 14px;border:none;background:none;cursor:pointer;font-size:12.5px;color:#475569;text-align:left;font-family:'DM Sans',sans-serif;transition:background .15s;line-height:1.5;border-radius:0;display:flex;align-items:center;gap:8px}
+        .hgc-cat-items{padding:3px 0}
+        .hgc-q{width:100%;padding:8px 13px;border:none;background:none;cursor:pointer;font-size:12px;color:#475569;text-align:left;font-family:'DM Sans',sans-serif;transition:background .15s;line-height:1.5;border-radius:0;display:flex;align-items:center;gap:7px}
         .hgc-q:hover{background:#fefce8;color:${NAVY}}
-        .hgc-q::before{content:'→';color:${GOLD2};font-size:11px;flex-shrink:0}
+        .hgc-q::before{content:'→';color:${GOLD2};font-size:10px;flex-shrink:0}
 
         /* WhatsApp banner */
-        .hgc-wa-banner{
-          margin:12px 12px 4px;border-radius:12px;overflow:hidden;flex-shrink:0;
-        }
-        .hgc-wa-btn{
-          display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;
-          background:linear-gradient(135deg,#25D366,#128C7E);
-          border:none;cursor:pointer;text-decoration:none;
-          transition:opacity .18s;
-        }
+        .hgc-wa-banner{margin:8px 10px 8px;border-radius:11px;overflow:hidden;flex-shrink:0}
+        .hgc-wa-btn{display:flex;align-items:center;gap:9px;width:100%;padding:10px 13px;background:linear-gradient(135deg,#25D366,#128C7E);border:none;cursor:pointer;text-decoration:none;transition:opacity .18s}
         .hgc-wa-btn:hover{opacity:.9}
-        .hgc-wa-ico{font-size:20px;flex-shrink:0}
+        .hgc-wa-ico{font-size:18px;flex-shrink:0}
         .hgc-wa-txt{text-align:left}
-        .hgc-wa-ttl{font-size:13px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif}
-        .hgc-wa-sub{font-size:11px;color:rgba(255,255,255,.75);font-family:'DM Sans',sans-serif}
+        .hgc-wa-ttl{font-size:12.5px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif}
+        .hgc-wa-sub{font-size:10px;color:rgba(255,255,255,.75);font-family:'DM Sans',sans-serif}
 
         /* ── CHAT ── */
-        .hgc-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-        .hgc-msgs::-webkit-scrollbar{width:4px}
+        .hgc-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;min-height:0}
+        .hgc-msgs::-webkit-scrollbar{width:3px}
         .hgc-msgs::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:99px}
         .hgc-msg{display:flex;flex-direction:column;max-width:82%}
         .hgc-msg.bot{align-self:flex-start}
         .hgc-msg.user{align-self:flex-end}
-        .hgc-bubble{padding:10px 13px;border-radius:16px;font-size:13px;line-height:1.6;color:${NAVY}}
+        .hgc-bubble{padding:9px 12px;border-radius:15px;font-size:12.5px;line-height:1.6;color:${NAVY}}
         .hgc-msg.bot .hgc-bubble{background:#f1f5f9;border-bottom-left-radius:4px}
         .hgc-msg.user .hgc-bubble{background:linear-gradient(135deg,${GOLD},${GOLD2});border-bottom-right-radius:4px;font-weight:500}
-        .hgc-time{font-size:10px;color:#94a3b8;margin-top:3px}
+        .hgc-time{font-size:9.5px;color:#94a3b8;margin-top:2px}
         .hgc-msg.user .hgc-time{text-align:right}
 
         /* Typing */
-        .hgc-typing{display:flex;gap:4px;align-items:center;padding:10px 13px;background:#f1f5f9;border-radius:16px;border-bottom-left-radius:4px;width:fit-content}
-        .hgc-typing span{width:7px;height:7px;border-radius:50%;background:#94a3b8;animation:hgcBounce 1.2s infinite}
+        .hgc-typing{display:flex;gap:4px;align-items:center;padding:9px 12px;background:#f1f5f9;border-radius:15px;border-bottom-left-radius:4px;width:fit-content}
+        .hgc-typing span{width:6px;height:6px;border-radius:50%;background:#94a3b8;animation:hgcBounce 1.2s infinite}
         .hgc-typing span:nth-child(2){animation-delay:.2s}
         .hgc-typing span:nth-child(3){animation-delay:.4s}
-        @keyframes hgcBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+        @keyframes hgcBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
 
         /* Input */
-        .hgc-input-wrap{padding:10px 12px;border-top:1.5px solid #f1f5f9;display:flex;gap:8px;align-items:center;flex-shrink:0}
-        .hgc-input{flex:1;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:22px;font-size:13px;font-family:'DM Sans',sans-serif;color:${NAVY};background:#f8fafc;outline:none;transition:border-color .18s}
+        .hgc-input-wrap{padding:8px 10px;border-top:1.5px solid #f1f5f9;display:flex;gap:7px;align-items:center;flex-shrink:0}
+        .hgc-input{flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:22px;font-size:12.5px;font-family:'DM Sans',sans-serif;color:${NAVY};background:#f8fafc;outline:none;transition:border-color .18s}
         .hgc-input:focus{border-color:${NAVY};background:#fff}
-        .hgc-send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${GOLD},${GOLD2});border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s,opacity .2s}
+        .hgc-send{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,${GOLD},${GOLD2});border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s,opacity .2s}
         .hgc-send:hover:not(:disabled){transform:scale(1.1)}
         .hgc-send:disabled{opacity:.4;cursor:not-allowed}
-        .hgc-send svg{width:16px;height:16px;fill:${NAVY}}
+        .hgc-send svg{width:15px;height:15px;fill:${NAVY}}
 
         /* Chat WA footer */
-        .hgc-chat-wa{padding:8px 12px 10px;flex-shrink:0}
-        .hgc-chat-wa a{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:10px;text-decoration:none;transition:opacity .18s}
+        .hgc-chat-wa{padding:6px 10px 8px;flex-shrink:0}
+        .hgc-chat-wa a{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:9px;text-decoration:none;transition:opacity .18s}
         .hgc-chat-wa a:hover{opacity:.9}
-        .hgc-chat-wa-txt{font-size:12px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif}
+        .hgc-chat-wa-txt{font-size:11.5px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif}
 
+        /* Mobile: on very small screens shrink further */
         @media(max-width:400px){
-          .hgc-panel{right:8px;bottom:90px;width:calc(100vw - 16px)}
-          .hgc-fab{right:16px;bottom:16px}
+          .hgc-panel{right:8px;bottom:80px;width:calc(100vw - 16px);height:calc(100vh - 104px);max-height:480px}
+          .hgc-fab{right:14px;bottom:14px;width:50px;height:50px}
+        }
+        /* Extra small height screens (e.g. landscape mobile) */
+        @media(max-height:600px){
+          .hgc-panel{max-height:calc(100vh - 100px)}
         }
       `}</style>
 
@@ -320,7 +330,7 @@ export default function HandyGidiChat() {
                 <div className="hgc-wa-banner">
                   <a href={waLink} target="_blank" rel="noopener noreferrer" className="hgc-wa-btn">
                     <span className="hgc-wa-ico">
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     </span>
                     <div className="hgc-wa-txt">
                       <div className="hgc-wa-ttl">Chat with us on WhatsApp</div>
@@ -370,10 +380,10 @@ export default function HandyGidiChat() {
                   </button>
                 </div>
 
-                {/* WhatsApp footer in chat tab */}
+                {/* WhatsApp footer */}
                 <div className="hgc-chat-wa">
                   <a href={waLink} target="_blank" rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     <span className="hgc-chat-wa-txt">Still need help? Chat on WhatsApp → 07051094001</span>
                   </a>
                 </div>
