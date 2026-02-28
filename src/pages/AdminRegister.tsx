@@ -41,7 +41,7 @@ export default function AdminRegister() {
       return;
     }
     // Basic admin code check — replace with your real secret
-    if (adminCode !== 'HANDYGIDI_ADMIN_2025') {
+    if (adminCode !== 'HANDYGIDI456') {
       toast.error('Invalid admin access code');
       return;
     }
