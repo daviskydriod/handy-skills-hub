@@ -20,53 +20,74 @@ import {
 import { getCategories, type Category } from "@/api/categories";
 
 // ─── Theme ───────────────────────────────────────────────────────────
-const TEAL   = "#0d9488";
-const TEAL2  = "#0f766e";
-const NAVY   = "#0b1f3a";
+const TEAL  = "#0d9488";
+const TEAL2 = "#0f766e";
+const NAVY  = "#0b1f3a";
 const SIDEBAR_W = 240;
 
 // ─── Types ───────────────────────────────────────────────────────────
 type TabType = "overview" | "courses" | "add" | "earnings";
 
 interface Lesson {
-  id: string;
-  title: string;
-  description: string;
-  videoUrl: string;
-  duration: string;
+  id: string; title: string; description: string; videoUrl: string; duration: string;
 }
 interface Module {
-  id: string;
-  title: string;
-  description: string;
-  lessons: Lesson[];
+  id: string; title: string; description: string; lessons: Lesson[];
 }
 interface Part {
-  id: string;
-  title: string;
-  description: string;
-  modules: Module[];
+  id: string; title: string; description: string; modules: Module[];
 }
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-const emptyLesson  = (): Lesson  => ({ id: uid(), title: "", description: "", videoUrl: "", duration: "" });
-const emptyModule  = (): Module  => ({ id: uid(), title: "", description: "", lessons: [emptyLesson()] });
-const emptyPart    = (): Part    => ({ id: uid(), title: "", description: "", modules: [emptyModule()] });
+const emptyLesson = (): Lesson => ({ id: uid(), title: "", description: "", videoUrl: "", duration: "" });
+const emptyModule = (): Module => ({ id: uid(), title: "", description: "", lessons: [emptyLesson()] });
+const emptyPart   = (): Part   => ({ id: uid(), title: "", description: "", modules: [emptyModule()] });
 
-const emptyForm = {
+// ✅ FIX: factory function — each call returns fresh objects, no shared reference mutations
+const makeEmptyForm = () => ({
   title: "", description: "", price: "", duration: "",
   lessons: "", catId: "", file: null as File | null,
   preview: null as string | null,
   parts: [emptyPart()] as Part[],
-};
+});
 
-// ─── Small helpers ────────────────────────────────────────────────────
+// ✅ FIX: parse course content safely — handles string, object, or null
+function parseParts(content: any): Part[] {
+  if (!content) return [emptyPart()];
+  let obj = content;
+  if (typeof content === "string") {
+    try { obj = JSON.parse(content); } catch { return [emptyPart()]; }
+  }
+  if (obj && Array.isArray(obj.parts) && obj.parts.length > 0) {
+    // Ensure every part/module/lesson has an id
+    return obj.parts.map((p: any) => ({
+      id:          p.id          ?? uid(),
+      title:       p.title       ?? "",
+      description: p.description ?? "",
+      modules: (p.modules ?? []).map((m: any) => ({
+        id:          m.id          ?? uid(),
+        title:       m.title       ?? "",
+        description: m.description ?? "",
+        lessons: (m.lessons ?? []).map((l: any) => ({
+          id:          l.id          ?? uid(),
+          title:       l.title       ?? "",
+          description: l.description ?? "",
+          videoUrl:    l.videoUrl    ?? l.video_url ?? "",
+          duration:    l.duration    ?? "",
+        })),
+      })),
+    }));
+  }
+  return [emptyPart()];
+}
+
 function getYouTubeId(url: string) {
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|embed\/|shorts\/))([^&?/\s]{11})/);
   return match ? match[1] : null;
 }
 
+// ─── Small helpers ────────────────────────────────────────────────────
 const CourseThumb = ({ image, title, size = 44 }: { image?: string | null; title?: string; size?: number }) => {
   const cols = [TEAL, "#0891b2", "#7c3aed", "#db2777", "#d97706", "#16a34a"];
   const col  = cols[(title?.charCodeAt(0) ?? 0) % cols.length];
@@ -101,7 +122,6 @@ const SkeletonRow = () => (
   </div>
 );
 
-// ─── Sidebar Nav Item ─────────────────────────────────────────────────
 const NavItem = ({
   icon: Icon, label, active, onClick, badge, collapsed,
 }: {
@@ -140,33 +160,48 @@ export default function InstructorDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [sidebarOpen,  setSidebarOpen]  = useState(true);
-  const [tab,          setTab]          = useState<TabType>("overview");
-  const [courses,      setCourses]      = useState<Course[]>([]);
-  const [categories,   setCategories]   = useState<Category[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [submitting,   setSubmitting]   = useState(false);
-  const [editingId,    setEditingId]    = useState<number | null>(null);
-  const [deletingId,   setDeletingId]   = useState<number | null>(null);
-  const [searchQ,      setSearchQ]      = useState("");
-  const [form,         setForm]         = useState(emptyForm);
-
-  // collapsed sections in Part→Module→Lesson builder
+  const [sidebarOpen,      setSidebarOpen]      = useState(true);
+  const [tab,              setTab]              = useState<TabType>("overview");
+  const [courses,          setCourses]          = useState<Course[]>([]);
+  const [categories,       setCategories]       = useState<Category[]>([]);
+  const [loading,          setLoading]          = useState(true);
+  const [submitting,       setSubmitting]       = useState(false);
+  const [editingId,        setEditingId]        = useState<number | null>(null);
+  const [deletingId,       setDeletingId]       = useState<number | null>(null);
+  const [searchQ,          setSearchQ]          = useState("");
+  // ✅ FIX: use factory function so each reset gets fresh objects
+  const [form,             setForm]             = useState(makeEmptyForm);
   const [collapsedParts,   setCollapsedParts]   = useState<Record<string, boolean>>({});
   const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const setF = (key: keyof typeof emptyForm, val: any) => setForm(p => ({ ...p, [key]: val }));
-  const resetForm = () => { setForm(emptyForm); setEditingId(null); setCollapsedParts({}); setCollapsedModules({}); };
+  const setF = (key: keyof ReturnType<typeof makeEmptyForm>, val: any) =>
+    setForm(p => ({ ...p, [key]: val }));
 
+  // ✅ FIX: resetForm uses factory to avoid shared reference
+  const resetForm = () => {
+    setForm(makeEmptyForm());
+    setEditingId(null);
+    setCollapsedParts({});
+    setCollapsedModules({});
+  };
+
+  // ✅ FIX: fetch with admin=true so unpublished (pending) instructor courses
+  // are also returned, then filter by instructor_id client-side
   const fetchCourses = useCallback(async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
-      const res = await getCourses({ limit: 100 });
-      setCourses(res.courses.filter((c: Course) => c.instructor_id === user?.id));
-    } catch { toast({ title: "Failed to load courses", variant: "destructive" }); }
-    finally { setLoading(false); }
+      const res = await getCourses({ limit: 200, admin: true });
+      setCourses(
+        res.courses.filter((c: Course) => Number(c.instructor_id) === Number(user.id))
+      );
+    } catch {
+      toast({ title: "Failed to load courses", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   const fetchCats = useCallback(async () => {
@@ -174,27 +209,31 @@ export default function InstructorDashboard() {
   }, []);
 
   useEffect(() => { if (!user) return; fetchCourses(); fetchCats(); }, [user, fetchCourses, fetchCats]);
+
   useEffect(() => {
     const fn = () => { if (document.visibilityState === "visible" && user) fetchCourses(); };
     document.addEventListener("visibilitychange", fn);
     return () => document.removeEventListener("visibilitychange", fn);
   }, [user, fetchCourses]);
 
-  const totalStudents = courses.reduce((a, c) => a + c.enrolled, 0);
-  const totalEarnings = courses.reduce((a, c) => a + c.price * c.enrolled, 0);
-  const avgRating     = courses.length ? (courses.reduce((a, c) => a + c.rating, 0) / courses.length).toFixed(1) : "—";
-  const published     = courses.filter(c => c.is_published).length;
-  const pending       = courses.filter(c => !c.is_published).length;
-  const displayed     = courses.filter(c =>
+  // ── Derived stats ────────────────────────────────────────────────────
+  const totalStudents = courses.reduce((a, c) => a + (c.enrolled ?? 0), 0);
+  const totalEarnings = courses.reduce((a, c) => a + (parseFloat(String(c.price ?? 0)) * (c.enrolled ?? 0)), 0);
+  const avgRating     = courses.length
+    ? (courses.reduce((a, c) => a + (c.rating ?? 0), 0) / courses.length).toFixed(1)
+    : "—";
+  const published = courses.filter(c => c.is_published).length;
+  const pending   = courses.filter(c => !c.is_published).length;
+  const displayed = courses.filter(c =>
     c.title.toLowerCase().includes(searchQ.toLowerCase()) ||
     (c.category || "").toLowerCase().includes(searchQ.toLowerCase())
   );
 
-  // ── Part / Module / Lesson helpers ──────────────────────────────────
+  // ── Part / Module / Lesson helpers ───────────────────────────────────
   const updatePart = (pid: string, data: Partial<Part>) =>
     setF("parts", form.parts.map(p => p.id === pid ? { ...p, ...data } : p));
 
-  const addPart = () => setF("parts", [...form.parts, emptyPart()]);
+  const addPart    = () => setF("parts", [...form.parts, emptyPart()]);
   const removePart = (pid: string) => setF("parts", form.parts.filter(p => p.id !== pid));
 
   const addModule = (pid: string) =>
@@ -209,83 +248,114 @@ export default function InstructorDashboard() {
     });
 
   const addLesson = (pid: string, mid: string) => {
-    const part = form.parts.find(p => p.id === pid)!;
-    const mod  = part.modules.find(m => m.id === mid)!;
+    const mod = form.parts.find(p => p.id === pid)!.modules.find(m => m.id === mid)!;
     updateModule(pid, mid, { lessons: [...mod.lessons, emptyLesson()] });
   };
 
   const removeLesson = (pid: string, mid: string, lid: string) => {
-    const part = form.parts.find(p => p.id === pid)!;
-    const mod  = part.modules.find(m => m.id === mid)!;
+    const mod = form.parts.find(p => p.id === pid)!.modules.find(m => m.id === mid)!;
     updateModule(pid, mid, { lessons: mod.lessons.filter(l => l.id !== lid) });
   };
 
   const updateLesson = (pid: string, mid: string, lid: string, data: Partial<Lesson>) => {
-    const part = form.parts.find(p => p.id === pid)!;
-    const mod  = part.modules.find(m => m.id === mid)!;
+    const mod = form.parts.find(p => p.id === pid)!.modules.find(m => m.id === mid)!;
     updateModule(pid, mid, { lessons: mod.lessons.map(l => l.id === lid ? { ...l, ...data } : l) });
   };
 
-  // ── Edit / Submit ────────────────────────────────────────────────────
+  // ── Edit ─────────────────────────────────────────────────────────────
+  // ✅ FIX: parseParts handles string/object/null content safely
   const startEdit = (c: Course) => {
+    setCollapsedParts({});
+    setCollapsedModules({});
     setForm({
-      title: c.title, description: c.description, price: String(c.price),
-      duration: c.duration ?? "", lessons: String(c.lessons),
-      catId: String(c.category_id ?? ""), file: null, preview: c.image,
-      parts: (c as any).content?.parts ?? [emptyPart()],
+      title:       c.title       ?? "",
+      description: c.description ?? "",
+      price:       String(c.price ?? ""),
+      duration:    c.duration    ?? "",
+      lessons:     String(c.lessons ?? ""),
+      catId:       String(c.category_id ?? ""),
+      file:        null,
+      preview:     c.image ?? null,
+      parts:       parseParts(c.content),
     });
-    setEditingId(c.id); setTab("add");
+    setEditingId(c.id);
+    setTab("add");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ── Submit ────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim()) { toast({ title: "Title is required", variant: "destructive" }); return; }
+    if (!form.title.trim()) {
+      toast({ title: "Title is required", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     const contentJSON = JSON.stringify({ parts: form.parts });
+
     try {
       if (editingId) {
         if (form.file) {
           const fd = new FormData();
-          fd.append("title", form.title); fd.append("description", form.description);
-          fd.append("price", form.price || "0"); fd.append("duration", form.duration);
-          fd.append("lessons_count", form.lessons || "0"); fd.append("category_id", form.catId);
-          fd.append("is_published", "0"); fd.append("thumbnail", form.file);
-          fd.append("content", contentJSON);
+          fd.append("title",          form.title);
+          fd.append("description",    form.description);
+          fd.append("price",          form.price || "0");
+          fd.append("duration",       form.duration);
+          fd.append("lessons_count",  form.lessons || "0");
+          fd.append("category_id",    form.catId);
+          fd.append("is_published",   "0");  // back to pending on edit
+          fd.append("thumbnail",      form.file);
+          fd.append("content",        contentJSON);
           await updateCourseWithFile(editingId, fd);
         } else {
           await updateCourse(editingId, {
-            title: form.title, description: form.description,
-            price: parseFloat(form.price || "0"), duration: form.duration,
+            title:         form.title,
+            description:   form.description,
+            price:         parseFloat(form.price || "0"),
+            duration:      form.duration,
             lessons_count: parseInt(form.lessons || "0"),
-            category_id: form.catId || null, is_published: 0,
-            content: contentJSON,
+            category_id:   form.catId || null,
+            is_published:  0,
+            content:       contentJSON,
           });
         }
         toast({ title: "Course updated — awaiting admin approval ✅" });
       } else {
         const fd = new FormData();
-        fd.append("title", form.title); fd.append("description", form.description);
-        fd.append("price", form.price || "0"); fd.append("duration", form.duration);
-        fd.append("lessons_count", form.lessons || "0"); fd.append("category_id", form.catId);
-        fd.append("is_published", "0"); fd.append("content", contentJSON);
+        fd.append("title",         form.title);
+        fd.append("description",   form.description);
+        fd.append("price",         form.price || "0");
+        fd.append("duration",      form.duration);
+        fd.append("lessons_count", form.lessons || "0");
+        fd.append("category_id",   form.catId);
+        fd.append("is_published",  "0");
+        fd.append("content",       contentJSON);
         if (form.file) fd.append("thumbnail", form.file);
         await createCourse(fd);
         toast({ title: "Course submitted for admin approval 🎉" });
       }
-      resetForm(); fetchCourses(); setTab("courses");
+      resetForm();
+      await fetchCourses();
+      setTab("courses");
     } catch (err: any) {
-      toast({ title: err.response?.data?.error ?? "Failed to save", variant: "destructive" });
-    } finally { setSubmitting(false); }
+      toast({ title: err?.response?.data?.error ?? "Failed to save", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const togglePublish = async (c: Course) => {
-    if (!c.is_published) { toast({ title: "Only admins can publish courses.", variant: "destructive" }); return; }
+    if (!c.is_published) {
+      toast({ title: "Only admins can publish courses.", variant: "destructive" });
+      return;
+    }
     try {
       await updateCourse(c.id, { is_published: 0 });
       setCourses(prev => prev.map(x => x.id === c.id ? { ...x, is_published: false } : x));
       toast({ title: "Course unpublished" });
-    } catch { toast({ title: "Failed", variant: "destructive" }); }
+    } catch {
+      toast({ title: "Failed", variant: "destructive" });
+    }
   };
 
   const handleDelete = async (id: number, title: string) => {
@@ -295,18 +365,20 @@ export default function InstructorDashboard() {
       await deleteCourse(id);
       setCourses(prev => prev.filter(c => c.id !== id));
       toast({ title: "Course deleted" });
-    } catch { toast({ title: "Failed to delete", variant: "destructive" }); }
-    finally { setDeletingId(null); }
+    } catch {
+      toast({ title: "Failed to delete", variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const navItems: { key: TabType; label: string; icon: any; badge?: number }[] = [
-    { key: "overview",  label: "Overview",    icon: LayoutDashboard },
-    { key: "courses",   label: "My Courses",  icon: BookOpen, badge: pending },
+    { key: "overview",  label: "Overview",                              icon: LayoutDashboard },
+    { key: "courses",   label: "My Courses",                            icon: BookOpen, badge: pending },
     { key: "add",       label: editingId ? "Edit Course" : "Add Course", icon: PlusCircle },
-    { key: "earnings",  label: "Earnings",    icon: DollarSign },
+    { key: "earnings",  label: "Earnings",                              icon: DollarSign },
   ];
 
-  // ── Sidebar width ────────────────────────────────────────────────────
   const SW = sidebarOpen ? SIDEBAR_W : 64;
 
   return (
@@ -343,12 +415,16 @@ export default function InstructorDashboard() {
 
       {/* ══════════ SIDEBAR ══════════ */}
       <aside className="sidebar" style={{ width: SW, background: "#fff", borderRight: "1px solid #e8edf2", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", zIndex: 40 }}>
-        {/* Logo */}
-        {/* Logo */}
-       <div style={{ padding: sidebarOpen ? "18px 16px 14px" : "18px 0 14px", borderBottom: "1px solid #f1f5f9" }} /> 
-    
+        <div style={{ padding: sidebarOpen ? "18px 16px 14px" : "18px 0 14px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: sidebarOpen ? "flex-start" : "center", gap: 10 }}>
+          <img src={logo} alt="HandyGidi" style={{ width: 34, height: 34, borderRadius: 9, objectFit: "cover", flexShrink: 0, border: `2px solid ${TEAL}44` }} />
+          {sidebarOpen && (
+            <div>
+              <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 900, fontSize: 13, color: NAVY, lineHeight: 1 }}>HandyGidi</p>
+              <p style={{ fontSize: 9, fontWeight: 700, color: TEAL2, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>Instructor</p>
+            </div>
+          )}
+        </div>
 
-        {/* Nav links */}
         <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
           {navItems.map(({ key, label, icon, badge }) => (
             <NavItem
@@ -358,21 +434,21 @@ export default function InstructorDashboard() {
               active={tab === key}
               badge={badge}
               collapsed={!sidebarOpen}
-              onClick={() => { setTab(key as TabType); if (key === "add") resetForm(); }}
+              onClick={() => {
+                setTab(key as TabType);
+                // ✅ Only reset form when clicking Add tab directly (not from startEdit)
+                if (key === "add" && !editingId) resetForm();
+              }}
             />
           ))}
         </nav>
 
-        {/* User + sign out */}
-        <div style={{ borderTop: "1px solid #f1f5f9", padding: sidebarOpen ? "12px 16px" : "12px 0", display: "flex", alignItems: "center", gap: sidebarOpen ? 10 : 0, justifyContent: sidebarOpen ? "flex-start" : "center", flexWrap: "wrap" }}>
+        <div style={{ borderTop: "1px solid #f1f5f9", padding: sidebarOpen ? "12px 16px" : "12px 0", display: "flex", alignItems: "center", gap: sidebarOpen ? 10 : 0, justifyContent: sidebarOpen ? "flex-start" : "center" }}>
           <UserAvatar name={user?.name} size={32} />
           {sidebarOpen && (
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</p>
-              <button
-                onClick={() => { logout(); navigate("/"); }}
-                style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#94a3b8", fontFamily: "inherit", padding: 0 }}
-              >
+              <button onClick={() => { logout(); navigate("/"); }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#94a3b8", fontFamily: "inherit", padding: 0 }}>
                 <LogOut size={11} /> Sign out
               </button>
             </div>
@@ -385,17 +461,14 @@ export default function InstructorDashboard() {
 
         {/* Top bar */}
         <header style={{ background: "#fff", borderBottom: "1px solid #e8edf2", position: "sticky", top: 0, zIndex: 30, height: 56, display: "flex", alignItems: "center", padding: "0 20px", gap: 14 }}>
-          <button
-            onClick={() => setSidebarOpen(o => !o)}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8, color: "#64748b", display: "flex" }}
-          >
+          <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8, color: "#64748b", display: "flex" }}>
             {sidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
           </button>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: NAVY }}>
               {tab === "overview"  ? `Welcome back, ${user?.name?.split(" ")[0] ?? "Instructor"} 👋`
                : tab === "courses" ? "My Courses"
-               : tab === "add"     ? (editingId ? "Edit Course" : "Add Course")
+               : tab === "add"     ? (editingId ? "Edit Course" : "Add New Course")
                :                     "Earnings"}
             </h1>
           </div>
@@ -405,23 +478,21 @@ export default function InstructorDashboard() {
           <button style={{ background: "none", border: "none", cursor: "pointer", padding: 6, color: "#64748b" }}><Bell size={17} /></button>
         </header>
 
-        {/* Page content */}
         <main style={{ flex: 1, padding: "24px 20px", maxWidth: 1080, width: "100%", margin: "0 auto" }}>
 
           {/* ════ OVERVIEW ════ */}
           {tab === "overview" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              {/* Stat cards */}
               <div style={{ display: "grid", gap: 12 }} className="g4">
                 {[
-                  { label: "My Courses",       value: loading ? "—" : courses.length,                                                    icon: BookOpen,    color: TEAL,      bg: TEAL + "15" },
-                  { label: "Total Students",    value: loading ? "—" : totalStudents.toLocaleString(),                                    icon: Users,       color: "#3b82f6", bg: "#3b82f615" },
-                  { label: "Est. Earnings",     value: loading ? "—" : `₦${totalEarnings.toLocaleString()}`,                             icon: DollarSign,  color: "#10b981", bg: "#10b98115" },
-                  { label: "Avg Rating",        value: loading ? "—" : avgRating,                                                        icon: Star,        color: "#f59e0b", bg: "#f59e0b15" },
-                  { label: "Published",         value: loading ? "—" : published,                                                        icon: TrendingUp,  color: "#22c55e", bg: "#22c55e15" },
-                  { label: "Pending Approval",  value: loading ? "—" : pending,                                                          icon: Clock,       color: "#f97316", bg: "#f9731615" },
-                  { label: "Avg Students",      value: loading ? "—" : courses.length ? Math.round(totalStudents / courses.length) : 0,  icon: BarChart2,   color: "#8b5cf6", bg: "#8b5cf615" },
-                  { label: "Categories",        value: loading ? "—" : new Set(courses.map(c => c.category)).size,                       icon: ChevronRight, color: "#ec4899", bg: "#ec489915" },
+                  { label: "My Courses",      value: loading ? "—" : courses.length,                                                                    icon: BookOpen,    color: TEAL,      bg: TEAL + "15" },
+                  { label: "Total Students",  value: loading ? "—" : totalStudents.toLocaleString(),                                                     icon: Users,       color: "#3b82f6", bg: "#3b82f615" },
+                  { label: "Est. Earnings",   value: loading ? "—" : `₦${totalEarnings.toLocaleString()}`,                                              icon: DollarSign,  color: "#10b981", bg: "#10b98115" },
+                  { label: "Avg Rating",      value: loading ? "—" : avgRating,                                                                         icon: Star,        color: "#f59e0b", bg: "#f59e0b15" },
+                  { label: "Published",       value: loading ? "—" : published,                                                                         icon: TrendingUp,  color: "#22c55e", bg: "#22c55e15" },
+                  { label: "Pending Approval",value: loading ? "—" : pending,                                                                           icon: Clock,       color: "#f97316", bg: "#f9731615" },
+                  { label: "Avg Students",    value: loading ? "—" : courses.length ? Math.round(totalStudents / courses.length) : 0,                   icon: BarChart2,   color: "#8b5cf6", bg: "#8b5cf615" },
+                  { label: "Categories",      value: loading ? "—" : new Set(courses.map(c => c.category)).size,                                        icon: ChevronRight, color: "#ec4899", bg: "#ec489915" },
                 ].map(({ label, value, icon: Icon, color, bg }) => (
                   <div key={label} className="card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -435,7 +506,6 @@ export default function InstructorDashboard() {
                 ))}
               </div>
 
-              {/* Approval notice */}
               <div style={{ background: TEAL + "08", border: `1px solid ${TEAL}25`, borderRadius: 14, padding: 14, display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <ShieldCheck size={16} style={{ color: TEAL, flexShrink: 0, marginTop: 1 }} />
                 <div>
@@ -444,7 +514,21 @@ export default function InstructorDashboard() {
                 </div>
               </div>
 
-              {/* Recent courses grid */}
+              {pending > 0 && (
+                <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 14, padding: 14, display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <AlertCircle size={16} style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, marginBottom: 2 }}>
+                      {pending} Course{pending > 1 ? "s" : ""} Awaiting Approval
+                    </p>
+                    <p style={{ fontSize: 12, color: "#64748b" }}>Your submitted courses are under admin review.</p>
+                  </div>
+                  <button onClick={() => setTab("courses")} style={{ fontSize: 11, fontWeight: 700, color: TEAL, background: "none", border: `1px solid ${TEAL}40`, borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                    View →
+                  </button>
+                </div>
+              )}
+
               {loading ? (
                 <div className="card" style={{ overflow: "hidden" }}>{[1, 2, 3].map(i => <SkeletonRow key={i} />)}</div>
               ) : courses.length === 0 ? (
@@ -463,7 +547,7 @@ export default function InstructorDashboard() {
                         <CourseThumb title={c.title} image={c.image} size={46} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }}>{c.title}</p>
-                          <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.enrolled} students · ₦{c.price.toLocaleString()}</p>
+                          <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.enrolled} students · ₦{parseFloat(String(c.price ?? 0)).toLocaleString()}</p>
                         </div>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -493,24 +577,36 @@ export default function InstructorDashboard() {
                 <input className="inp" value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search courses…" style={{ paddingLeft: 36 }} />
               </div>
               <div className="card" style={{ overflow: "hidden" }}>
-                {loading ? [1, 2, 3, 4].map(i => <SkeletonRow key={i} />) :
-                  displayed.length === 0 ? (
-                    <div style={{ padding: "56px 24px", textAlign: "center" }}><p style={{ color: "#94a3b8" }}>{courses.length === 0 ? "No courses yet." : "No results."}</p></div>
-                  ) : displayed.map(c => (
+                {loading
+                  ? [1, 2, 3, 4].map(i => <SkeletonRow key={i} />)
+                  : displayed.length === 0
+                  ? <div style={{ padding: "56px 24px", textAlign: "center" }}><p style={{ color: "#94a3b8" }}>{courses.length === 0 ? "No courses yet." : "No results."}</p></div>
+                  : displayed.map(c => (
                     <div key={c.id} className="arow">
                       <CourseThumb title={c.title} image={c.image} size={46} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                        <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.category || "—"} · {c.enrolled} students · ₦{c.price.toLocaleString()}</p>
+                        <p style={{ fontSize: 11, color: "#94a3b8" }}>
+                          {c.category || "—"} · {c.enrolled} students · ₦{parseFloat(String(c.price ?? 0)).toLocaleString()}
+                        </p>
                       </div>
                       <StatusPill published={!!c.is_published} />
                       <div style={{ display: "flex", gap: 4 }}>
-                        {c.is_published && <button onClick={() => togglePublish(c)} className="icn" title="Unpublish"><EyeOff size={14} style={{ color: "#64748b" }} /></button>}
-                        <button onClick={() => startEdit(c)} className="icn"><Edit2 size={14} style={{ color: "#3b82f6" }} /></button>
-                        <button onClick={() => handleDelete(c.id, c.title)} disabled={deletingId === c.id} className="icn"><Trash2 size={14} style={{ color: "#ef4444" }} /></button>
+                        {c.is_published && (
+                          <button onClick={() => togglePublish(c)} className="icn" title="Unpublish">
+                            <EyeOff size={14} style={{ color: "#64748b" }} />
+                          </button>
+                        )}
+                        <button onClick={() => startEdit(c)} className="icn" title="Edit">
+                          <Edit2 size={14} style={{ color: "#3b82f6" }} />
+                        </button>
+                        <button onClick={() => handleDelete(c.id, c.title)} disabled={deletingId === c.id} className="icn" title="Delete">
+                          <Trash2 size={14} style={{ color: "#ef4444" }} />
+                        </button>
                       </div>
                     </div>
-                  ))}
+                  ))
+                }
               </div>
             </div>
           )}
@@ -524,7 +620,7 @@ export default function InstructorDashboard() {
                     {editingId ? "Edit Course" : "Create New Course"}
                   </h2>
                   <p style={{ fontSize: 12, color: "#64748b" }}>
-                    {editingId ? "Changes require admin re-approval." : "Your course will be reviewed by an admin before going live."}
+                    {editingId ? "Changes require admin re-approval before going live." : "Your course will be reviewed by an admin before going live."}
                   </p>
                 </div>
                 {editingId && (
@@ -534,10 +630,11 @@ export default function InstructorDashboard() {
                 )}
               </div>
 
-              {/* Approval notice */}
               <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: 12, display: "flex", gap: 8, marginBottom: 22 }}>
                 <Info size={14} style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }} />
-                <p style={{ fontSize: 12, color: "#92400e" }}><strong>Admin approval required.</strong> Course will be saved as a draft and won't appear publicly until approved.</p>
+                <p style={{ fontSize: 12, color: "#92400e" }}>
+                  <strong>Admin approval required.</strong> {editingId ? "Saving will reset this course to Pending until an admin re-approves it." : "Course will be saved as a draft and won't appear publicly until approved."}
+                </p>
               </div>
 
               <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -579,7 +676,6 @@ export default function InstructorDashboard() {
                         <input className="inp" type="number" min="0" value={form.lessons} onChange={e => setF("lessons", e.target.value)} placeholder="e.g. 24" />
                       </div>
                     </div>
-                    {/* Thumbnail */}
                     <div>
                       <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 6, display: "block" }}>Course Thumbnail</label>
                       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
@@ -602,7 +698,7 @@ export default function InstructorDashboard() {
                   </div>
                 </section>
 
-                {/* ── COURSE CONTENT: Parts → Modules → Lessons ── */}
+                {/* ── COURSE CONTENT ── */}
                 <section>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <div>
@@ -614,12 +710,11 @@ export default function InstructorDashboard() {
                     </button>
                   </div>
 
-                  {form.parts.map((part, pi) => {
+                  {(form.parts ?? []).map((part, pi) => {
                     const partCollapsed = collapsedParts[part.id];
-                    const totalLessons = part.modules.reduce((a, m) => a + m.lessons.length, 0);
+                    const totalLessons  = (part.modules ?? []).reduce((a, m) => a + (m.lessons?.length ?? 0), 0);
                     return (
                       <div key={part.id} className="part-block">
-                        {/* Part header */}
                         <div
                           className="sec-head"
                           style={{ background: NAVY + "06", borderBottom: partCollapsed ? "none" : "1px solid #e8edf2" }}
@@ -631,7 +726,7 @@ export default function InstructorDashboard() {
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontWeight: 700, fontSize: 13, color: NAVY }}>{part.title || `Part ${pi + 1}`}</p>
-                            <p style={{ fontSize: 11, color: "#94a3b8" }}>{part.modules.length} module{part.modules.length !== 1 ? "s" : ""} · {totalLessons} lesson{totalLessons !== 1 ? "s" : ""}</p>
+                            <p style={{ fontSize: 11, color: "#94a3b8" }}>{(part.modules ?? []).length} modules · {totalLessons} lessons</p>
                           </div>
                           <ChevronDown size={14} style={{ color: "#94a3b8", transform: partCollapsed ? "rotate(-90deg)" : "none", transition: "transform .2s", flexShrink: 0 }} />
                           {form.parts.length > 1 && (
@@ -643,7 +738,6 @@ export default function InstructorDashboard() {
 
                         {!partCollapsed && (
                           <div style={{ padding: 16 }}>
-                            {/* Part fields */}
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }} className="fgrid">
                               <div>
                                 <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 5, display: "block" }}>Part Title</label>
@@ -655,13 +749,11 @@ export default function InstructorDashboard() {
                               </div>
                             </div>
 
-                            {/* Modules */}
-                            {part.modules.map((mod, mi) => {
-                              const modKey = `${part.id}-${mod.id}`;
+                            {(part.modules ?? []).map((mod, mi) => {
+                              const modKey       = `${part.id}-${mod.id}`;
                               const modCollapsed = collapsedModules[modKey];
                               return (
                                 <div key={mod.id} className="mod-block">
-                                  {/* Module header */}
                                   <div
                                     className="sec-head"
                                     style={{ borderBottom: modCollapsed ? "none" : "1px solid #e8edf2" }}
@@ -672,10 +764,10 @@ export default function InstructorDashboard() {
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                       <p style={{ fontWeight: 700, fontSize: 12, color: NAVY }}>{mod.title || `Module ${mi + 1}`}</p>
-                                      <p style={{ fontSize: 10, color: "#94a3b8" }}>{mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""}</p>
+                                      <p style={{ fontSize: 10, color: "#94a3b8" }}>{(mod.lessons ?? []).length} lessons</p>
                                     </div>
                                     <ChevronDown size={13} style={{ color: "#94a3b8", transform: modCollapsed ? "rotate(-90deg)" : "none", transition: "transform .2s", flexShrink: 0 }} />
-                                    {part.modules.length > 1 && (
+                                    {(part.modules ?? []).length > 1 && (
                                       <button type="button" onClick={e => { e.stopPropagation(); removeModule(part.id, mod.id); }} className="icn">
                                         <X size={12} style={{ color: "#ef4444" }} />
                                       </button>
@@ -684,7 +776,6 @@ export default function InstructorDashboard() {
 
                                   {!modCollapsed && (
                                     <div style={{ padding: 14 }}>
-                                      {/* Module fields */}
                                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }} className="fgrid">
                                         <div>
                                           <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 4, display: "block" }}>Module Title</label>
@@ -696,9 +787,8 @@ export default function InstructorDashboard() {
                                         </div>
                                       </div>
 
-                                      {/* Lessons */}
-                                      {mod.lessons.map((lesson, li) => {
-                                        const ytId = getYouTubeId(lesson.videoUrl);
+                                      {(mod.lessons ?? []).map((lesson, li) => {
+                                        const ytId = getYouTubeId(lesson.videoUrl ?? "");
                                         return (
                                           <div key={lesson.id} className="lesson-block">
                                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
@@ -706,13 +796,12 @@ export default function InstructorDashboard() {
                                                 <PlayCircle size={13} style={{ color: TEAL }} />
                                                 <span style={{ fontSize: 11, fontWeight: 700, color: NAVY }}>Lesson {li + 1}</span>
                                               </div>
-                                              {mod.lessons.length > 1 && (
+                                              {(mod.lessons ?? []).length > 1 && (
                                                 <button type="button" onClick={() => removeLesson(part.id, mod.id, lesson.id)} className="icn">
                                                   <X size={12} style={{ color: "#ef4444" }} />
                                                 </button>
                                               )}
                                             </div>
-
                                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }} className="fgrid">
                                               <div>
                                                 <label style={{ fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
@@ -727,37 +816,24 @@ export default function InstructorDashboard() {
                                                 <input className="inp" value={lesson.duration} onChange={e => updateLesson(part.id, mod.id, lesson.id, { duration: e.target.value })} placeholder="e.g. 12 mins" style={{ fontSize: 12 }} />
                                               </div>
                                             </div>
-
                                             <div style={{ marginBottom: 8 }}>
                                               <label style={{ fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
                                                 <Film size={10} /> YouTube Video URL
                                               </label>
                                               <input className="inp" value={lesson.videoUrl} onChange={e => updateLesson(part.id, mod.id, lesson.id, { videoUrl: e.target.value })} placeholder="https://youtube.com/watch?v=..." style={{ fontSize: 12 }} />
                                             </div>
-
-                                            {/* YouTube preview */}
                                             {ytId && (
                                               <div style={{ borderRadius: 8, overflow: "hidden", marginBottom: 8, border: "1px solid #e2e8f0" }}>
-                                                <iframe
-                                                  src={`https://www.youtube.com/embed/${ytId}`}
-                                                  style={{ width: "100%", height: 160, border: "none", display: "block" }}
-                                                  allowFullScreen
-                                                  title={lesson.title || "Lesson video"}
-                                                />
+                                                <iframe src={`https://www.youtube.com/embed/${ytId}`} style={{ width: "100%", height: 160, border: "none", display: "block" }} allowFullScreen title={lesson.title || "Lesson video"} />
                                               </div>
                                             )}
-
                                             <div>
-                                              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                                                <FileText size={10} /> Lesson Description
-                                              </label>
+                                              <label style={{ fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, display: "block" }}>Lesson Description</label>
                                               <textarea className="inp" value={lesson.description} onChange={e => updateLesson(part.id, mod.id, lesson.id, { description: e.target.value })} rows={2} placeholder="What will students learn in this lesson?" style={{ fontSize: 12, resize: "vertical" }} />
                                             </div>
                                           </div>
                                         );
                                       })}
-
-                                      {/* Add lesson */}
                                       <button type="button" onClick={() => addLesson(part.id, mod.id)} className="add-btn" style={{ marginTop: 6 }}>
                                         <Plus size={12} /> Add Lesson
                                       </button>
@@ -766,8 +842,6 @@ export default function InstructorDashboard() {
                                 </div>
                               );
                             })}
-
-                            {/* Add module */}
                             <button type="button" onClick={() => addModule(part.id)} className="add-btn" style={{ marginTop: 4 }}>
                               <Plus size={12} /> Add Module
                             </button>
@@ -777,16 +851,17 @@ export default function InstructorDashboard() {
                     );
                   })}
 
-                  {/* Add part */}
                   <button type="button" onClick={addPart} className="add-btn" style={{ width: "100%", justifyContent: "center", padding: "11px 0" }}>
                     <Plus size={13} /> Add Another Part
                   </button>
                 </section>
 
-                {/* Submit */}
                 <div style={{ display: "flex", gap: 10, paddingTop: 4, flexWrap: "wrap" }}>
                   <button type="submit" disabled={submitting} className="btnt" style={{ padding: "11px 24px", fontSize: 13 }}>
-                    {submitting ? <><Loader size={13} className="spin" /> Saving…</> : <><Check size={13} /> {editingId ? "Save & Submit for Review" : "Submit for Approval"}</>}
+                    {submitting
+                      ? <><Loader size={13} className="spin" /> Saving…</>
+                      : <><Check size={13} /> {editingId ? "Save & Submit for Review" : "Submit for Approval"}</>
+                    }
                   </button>
                   <button type="button" onClick={() => { resetForm(); setTab("courses"); }} style={{ padding: "11px 20px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 10, background: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, color: "#64748b" }}>
                     Cancel
@@ -801,9 +876,9 @@ export default function InstructorDashboard() {
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <div style={{ display: "grid", gap: 12 }} className="g3">
                 {[
-                  { label: "Total Earned",   value: `₦${totalEarnings.toLocaleString()}`,                                                              desc: "All time estimate" },
-                  { label: "Avg per Course", value: courses.length ? `₦${Math.round(totalEarnings / courses.length).toLocaleString()}` : "—",         desc: "Average revenue" },
-                  { label: "Best Performer", value: courses.length ? `₦${Math.max(...courses.map(c => c.price * c.enrolled)).toLocaleString()}` : "—", desc: "Highest earning" },
+                  { label: "Total Earned",   value: `₦${totalEarnings.toLocaleString()}`,                                                                desc: "All time estimate" },
+                  { label: "Avg per Course", value: courses.length ? `₦${Math.round(totalEarnings / courses.length).toLocaleString()}` : "—",           desc: "Average revenue" },
+                  { label: "Best Performer", value: courses.length ? `₦${Math.max(...courses.map(c => parseFloat(String(c.price ?? 0)) * (c.enrolled ?? 0))).toLocaleString()}` : "—", desc: "Highest earning" },
                 ].map(s => (
                   <div key={s.label} className="card" style={{ padding: 20 }}>
                     <p style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6 }}>{s.label}</p>
@@ -816,20 +891,31 @@ export default function InstructorDashboard() {
                 <div style={{ padding: "13px 16px", borderBottom: "1px solid #f1f5f9" }}>
                   <h3 style={{ fontWeight: 700, fontSize: 14, color: NAVY }}>Revenue per Course</h3>
                 </div>
-                {loading ? [1, 2, 3].map(i => <SkeletonRow key={i} />) :
-                  courses.length === 0 ? <div style={{ padding: "48px 24px", textAlign: "center" }}><p style={{ color: "#94a3b8" }}>No courses yet.</p></div> :
-                    [...courses].sort((a, b) => (b.price * b.enrolled) - (a.price * a.enrolled)).map((c, i, arr) => (
-                      <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < arr.length - 1 ? "1px solid #f8fafc" : "none" }}>
-                        <CourseThumb title={c.title} image={c.image} size={40} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontWeight: 600, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                          <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.enrolled} students · {c.is_published ? "Live" : "Pending"}</p>
+                {loading
+                  ? [1, 2, 3].map(i => <SkeletonRow key={i} />)
+                  : courses.length === 0
+                  ? <div style={{ padding: "48px 24px", textAlign: "center" }}><p style={{ color: "#94a3b8" }}>No courses yet.</p></div>
+                  : [...courses]
+                      .sort((a, b) =>
+                        (parseFloat(String(b.price ?? 0)) * (b.enrolled ?? 0)) -
+                        (parseFloat(String(a.price ?? 0)) * (a.enrolled ?? 0))
+                      )
+                      .map((c, i, arr) => (
+                        <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < arr.length - 1 ? "1px solid #f8fafc" : "none" }}>
+                          <CourseThumb title={c.title} image={c.image} size={40} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontWeight: 600, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
+                            <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.enrolled} students · {c.is_published ? "Live" : "Pending"}</p>
+                          </div>
+                          <p style={{ fontWeight: 800, fontSize: 15, color: NAVY, flexShrink: 0 }}>
+                            {parseFloat(String(c.price ?? 0)) === 0
+                              ? <span style={{ color: "#94a3b8", fontWeight: 500, fontSize: 13 }}>Free</span>
+                              : `₦${(parseFloat(String(c.price ?? 0)) * (c.enrolled ?? 0)).toLocaleString()}`
+                            }
+                          </p>
                         </div>
-                        <p style={{ fontWeight: 800, fontSize: 15, color: NAVY, flexShrink: 0 }}>
-                          {c.price === 0 ? <span style={{ color: "#94a3b8", fontWeight: 500, fontSize: 13 }}>Free</span> : `₦${(c.price * c.enrolled).toLocaleString()}`}
-                        </p>
-                      </div>
-                    ))}
+                      ))
+                }
               </div>
               <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: 12, display: "flex", gap: 8 }}>
                 <AlertCircle size={14} style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }} />
