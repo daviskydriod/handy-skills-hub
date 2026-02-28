@@ -15,7 +15,6 @@ import {
   partnerLogos,
   BUSINESS_INFO,
 } from "@/data/mockData";
-import logo from "@/assets/logo.jpeg";
 import { useCourses } from "../hooks/useCourses";
 import type { Course } from "../api/courses";
 
@@ -35,7 +34,7 @@ const GOLD2 = "#CA8A04";
    Nigerian-context Unsplash images (free, no auth needed)      */
 const SLIDES = [
   {
-    image: "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?w=1400&q=80&fit=crop",
+    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1400&q=80&fit=crop&crop=faces",
     eyebrow: "Welcome to",
     heading: "HandyGidi\nTraining Centre",
     sub: "Abuja's most hands-on digital & business skills academy. You are exactly where your future begins.",
@@ -43,7 +42,7 @@ const SLIDES = [
     ctaTo: "/register",
   },
   {
-    image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1400&q=80&fit=crop",
+    image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=1400&q=80&fit=crop&crop=faces",
     eyebrow: "You Are Here",
     heading: "Learn It.\nMaster It.\nEarn From It.",
     sub: "From graphic design to AI, web development to business strategy — practical skills that pay.",
@@ -51,7 +50,7 @@ const SLIDES = [
     ctaTo: "/courses",
   },
   {
-    image: "https://images.unsplash.com/photo-1529390079861-591de354faf5?w=1400&q=80&fit=crop",
+    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=80&fit=crop&crop=faces",
     eyebrow: "Join Our Community",
     heading: "500+ Students\nAlready Winning.",
     sub: "Join a growing family of digital professionals trained right here in Abuja. Your turn is now.",
@@ -247,23 +246,6 @@ export default function Index() {
           {/* ── LEFT: text ── */}
           <div className="flex-1 max-w-2xl">
 
-            {/* Logo badge */}
-            <motion.div
-              key={`logo-${slide}`}
-              initial={{ opacity: 0, y: -16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center gap-3 mb-8"
-            >
-              <img src={logo} alt="HandyGidi"
-                className="w-12 h-12 rounded-xl object-contain"
-                style={{ border: "2px solid rgba(234,179,8,0.5)" }} />
-              <div>
-                <p className="font-extrabold text-white text-base leading-tight">HandyGidi</p>
-                <p className="text-[11px] font-semibold" style={{ color: GOLD }}>Training Centre · Abuja</p>
-              </div>
-            </motion.div>
-
             {/* Eyebrow */}
             <AnimatePresence mode="wait">
               <motion.span
@@ -363,38 +345,6 @@ export default function Index() {
             </div>
           </div>
 
-          {/* ── RIGHT: stat cards floating on image ── */}
-          <div className="hidden lg:flex flex-col gap-4 shrink-0">
-            {[
-              { icon: Users,    value: "500+",            label: "Students Trained" },
-              { icon: BookOpen, value: "14+",             label: "Courses Available" },
-              { icon: Trophy,   value: "5★",              label: "Avg Rating" },
-              { icon: MapPin,   value: "Lugbe, Abuja",    label: "Training Centre" },
-            ].map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                style={{
-                  background: "rgba(255,255,255,0.12)",
-                  backdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  minWidth: 200,
-                }}
-              >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})` }}>
-                  <s.icon size={16} style={{ color: "#060d1c" }} />
-                </div>
-                <div>
-                  <p className="font-extrabold text-white text-sm">{s.value}</p>
-                  <p className="text-[11px] text-white/60">{s.label}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
 
         {/* Slide progress bar at bottom */}
