@@ -18,20 +18,20 @@ const GOLD  = "#EAB308";
 const GOLD2 = "#CA8A04";
 
 const courses = [
-  { label: "Computer Appreciation",           icon: Monitor,     to: "/courses/computer-appreciation" },
-  { label: "AI & Data Analysis",              icon: Brain,       to: "/courses/ai-data-analysis" },
-  { label: "Social Media Management",         icon: Share2,      to: "/courses/social-media-management" },
-  { label: "Graphic Design",                  icon: Pen,         to: "/courses/graphic-design" },
-  { label: "Web Design",                      icon: Globe,       to: "/courses/web-design" },
-  { label: "Interior Design",                 icon: Home,        to: "/courses/interior-design" },
-  { label: "Leadership & Management",         icon: Briefcase,   to: "/courses/leadership-management" },
-  { label: "Digital Marketing",               icon: Megaphone,   to: "/courses/digital-marketing" },
-  { label: "Basic Programming (Python)",      icon: Code,        to: "/courses/python-programming" },
-  { label: "Office Productivity",             icon: FileText,    to: "/courses/office-productivity" },
-  { label: "Internet & Email Mastery",        icon: Mail,        to: "/courses/internet-email" },
-  { label: "Business Development Skills",     icon: TrendingUp,  to: "/courses/business-development" },
-  { label: "Women in Business Empowerment",   icon: Heart,       to: "/courses/women-in-business" },
-  { label: "Girl Child Digital Skills",       icon: Star,        to: "/courses/girl-child-digital" },
+  { label: "Computer Appreciation",                icon: Monitor,    to: "/courses/30" },
+  { label: "AI & Data Analysis",                   icon: Brain,      to: "/courses/31" },
+  { label: "Social Media Management",              icon: Share2,     to: "/courses/32" },
+  { label: "Graphic Design",                       icon: Pen,        to: "/courses/33" },
+  { label: "Web Design",                           icon: Globe,      to: "/courses/34" },
+  { label: "Interior Design",                      icon: Home,       to: "/courses/35" },
+  { label: "Leadership & Management",              icon: Briefcase,  to: "/courses/36" },
+  { label: "Digital Marketing",                    icon: Megaphone,  to: "/courses/37" },
+  { label: "Basic Programming (Python)",           icon: Code,       to: "/courses/38" },
+  { label: "Office Productivity",                  icon: FileText,   to: "/courses/39" },
+  { label: "Internet & Email Mastery",             icon: Mail,       to: "/courses/40" },
+  { label: "Business Development Skills",          icon: TrendingUp, to: "/courses/41" },
+  { label: "Women in Business Empowerment",        icon: Heart,      to: "/courses/42" },
+  { label: "Girl Child Digital Skills Program",    icon: Star,       to: "/courses/43" },
 ];
 
 const navLinks = [
@@ -47,9 +47,9 @@ const getDashboardPath = (role?: string) => {
 };
 
 export default function Navbar() {
-  const [open,          setOpen]          = useState(false);
-  const [userMenuOpen,  setUserMenuOpen]  = useState(false);
-  const [coursesOpen,   setCoursesOpen]   = useState(false);
+  const [open,              setOpen]              = useState(false);
+  const [userMenuOpen,      setUserMenuOpen]      = useState(false);
+  const [coursesOpen,       setCoursesOpen]       = useState(false);
   const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false);
   const location  = useLocation();
   const navigate  = useNavigate();
@@ -68,7 +68,6 @@ export default function Navbar() {
     navigate("/");
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (coursesRef.current && !coursesRef.current.contains(e.target as Node)) {
@@ -88,7 +87,6 @@ export default function Navbar() {
         borderBottom: "1px solid rgba(234,179,8,0.12)",
       }}
     >
-      {/* ── main nav row ── */}
       <div className="container flex h-16 items-center justify-between">
 
         {/* Logo */}
@@ -109,25 +107,23 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop nav links */}
+        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {/* Home */}
+
           <Link
             to="/"
             className="relative px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200"
             style={{ color: isActive("/") ? GOLD : "rgba(255,255,255,0.7)" }}
           >
             {isActive("/") && (
-              <motion.span
-                layoutId="nav-underline"
+              <motion.span layoutId="nav-underline"
                 className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full"
-                style={{ background: `linear-gradient(90deg,${GOLD},${GOLD2})` }}
-              />
+                style={{ background: `linear-gradient(90deg,${GOLD},${GOLD2})` }} />
             )}
             Home
           </Link>
 
-          {/* Courses dropdown trigger */}
+          {/* Courses dropdown */}
           <div className="relative" ref={coursesRef}>
             <button
               onClick={() => setCoursesOpen(!coursesOpen)}
@@ -136,21 +132,16 @@ export default function Navbar() {
               style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.7)" }}
             >
               {isCoursesActive && (
-                <motion.span
-                  layoutId="nav-underline"
+                <motion.span layoutId="nav-underline"
                   className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full"
-                  style={{ background: `linear-gradient(90deg,${GOLD},${GOLD2})` }}
-                />
+                  style={{ background: `linear-gradient(90deg,${GOLD},${GOLD2})` }} />
               )}
               Courses
-              <ChevronDown
-                size={13}
+              <ChevronDown size={13}
                 className={`transition-transform duration-200 ${coursesOpen ? "rotate-180" : ""}`}
-                style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.5)" }}
-              />
+                style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.5)" }} />
             </button>
 
-            {/* Mega dropdown */}
             <AnimatePresence>
               {coursesOpen && (
                 <motion.div
@@ -167,7 +158,6 @@ export default function Navbar() {
                     boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
                   }}
                 >
-                  {/* Header */}
                   <div className="px-5 py-4 border-b flex items-center justify-between"
                     style={{ borderColor: "rgba(234,179,8,0.12)", background: "rgba(0,0,0,0.2)" }}>
                     <div>
@@ -176,45 +166,30 @@ export default function Navbar() {
                         {courses.length} programs available · Enroll anytime
                       </p>
                     </div>
-                    <Link
-                      to="/courses"
-                      onClick={() => setCoursesOpen(false)}
+                    <Link to="/courses" onClick={() => setCoursesOpen(false)}
                       className="px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105"
-                      style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c" }}
-                    >
+                      style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c" }}>
                       View All
                     </Link>
                   </div>
 
-                  {/* Grid */}
                   <div className="p-4 grid grid-cols-2 gap-1">
                     {courses.map((course) => {
                       const Icon = course.icon;
+                      const active = location.pathname === course.to;
                       return (
-                        <Link
-                          key={course.to}
-                          to={course.to}
-                          onClick={() => setCoursesOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group"
-                          style={{
-                            background: location.pathname === course.to
-                              ? "rgba(234,179,8,0.1)"
-                              : "transparent",
-                          }}
+                        <Link key={course.to} to={course.to} onClick={() => setCoursesOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
+                          style={{ background: active ? "rgba(234,179,8,0.1)" : "transparent" }}
                           onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-                          onMouseLeave={e => (e.currentTarget.style.background =
-                            location.pathname === course.to ? "rgba(234,179,8,0.1)" : "transparent")}
+                          onMouseLeave={e => (e.currentTarget.style.background = active ? "rgba(234,179,8,0.1)" : "transparent")}
                         >
-                          <div
-                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all"
-                            style={{ background: "rgba(234,179,8,0.12)" }}
-                          >
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: "rgba(234,179,8,0.12)" }}>
                             <Icon size={13} style={{ color: GOLD }} />
                           </div>
-                          <span
-                            className="text-xs font-semibold leading-snug"
-                            style={{ color: location.pathname === course.to ? GOLD : "rgba(255,255,255,0.78)" }}
-                          >
+                          <span className="text-xs font-semibold leading-snug"
+                            style={{ color: active ? GOLD : "rgba(255,255,255,0.78)" }}>
                             {course.label}
                           </span>
                         </Link>
@@ -222,13 +197,14 @@ export default function Navbar() {
                     })}
                   </div>
 
-                  {/* Footer CTA */}
                   <div className="px-5 py-3 border-t flex items-center gap-3"
                     style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.15)" }}>
                     <GraduationCap size={14} style={{ color: GOLD }} />
                     <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-                      Can't decide? <Link to="/contact" onClick={() => setCoursesOpen(false)}
-                        className="underline" style={{ color: GOLD }}>Talk to our advisors</Link> for guidance.
+                      Can't decide?{" "}
+                      <Link to="/contact" onClick={() => setCoursesOpen(false)}
+                        className="underline" style={{ color: GOLD }}>Talk to our advisors</Link>
+                      {" "}for guidance.
                     </p>
                   </div>
                 </motion.div>
@@ -236,20 +212,15 @@ export default function Navbar() {
             </AnimatePresence>
           </div>
 
-          {/* Remaining links */}
           {navLinks.filter(l => l.to !== "/").map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
+            <Link key={l.to} to={l.to}
               className="relative px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200"
               style={{ color: isActive(l.to) ? GOLD : "rgba(255,255,255,0.7)" }}
             >
               {isActive(l.to) && (
-                <motion.span
-                  layoutId="nav-underline"
+                <motion.span layoutId="nav-underline"
                   className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full"
-                  style={{ background: `linear-gradient(90deg,${GOLD},${GOLD2})` }}
-                />
+                  style={{ background: `linear-gradient(90deg,${GOLD},${GOLD2})` }} />
               )}
               {l.label}
             </Link>
@@ -260,11 +231,9 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           {isAuthenticated && user ? (
             <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              <button onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all hover:bg-white/10"
-                style={{ border: "1px solid rgba(234,179,8,0.25)" }}
-              >
+                style={{ border: "1px solid rgba(234,179,8,0.25)" }}>
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold"
                   style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c" }}>
                   {user.name?.charAt(0).toUpperCase()}
@@ -290,20 +259,15 @@ export default function Navbar() {
                       <p className="text-xs font-bold text-white truncate">{user.name}</p>
                       <p className="text-[11px] capitalize mt-0.5" style={{ color: GOLD }}>{user.role}</p>
                     </div>
-                    <Link
-                      to={getDashboardPath(user.role)}
-                      onClick={() => setUserMenuOpen(false)}
+                    <Link to={getDashboardPath(user.role)} onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-3 text-sm font-semibold transition-all hover:bg-white/5"
-                      style={{ color: "rgba(255,255,255,0.8)" }}
-                    >
+                      style={{ color: "rgba(255,255,255,0.8)" }}>
                       <LayoutDashboard size={14} style={{ color: GOLD }} />
                       My Dashboard
                     </Link>
-                    <button
-                      onClick={handleLogout}
+                    <button onClick={handleLogout}
                       className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold transition-all hover:bg-red-500/10 border-t"
-                      style={{ color: "#f87171", borderColor: "rgba(255,255,255,0.07)" }}
-                    >
+                      style={{ color: "#f87171", borderColor: "rgba(255,255,255,0.07)" }}>
                       <LogOut size={14} />
                       Sign Out
                     </button>
@@ -313,22 +277,18 @@ export default function Navbar() {
             </div>
           ) : (
             <>
-              <Link
-                to="/login"
+              <Link to="/login"
                 className="px-4 py-2 text-sm font-semibold rounded-full transition-all hover:bg-white/10"
-                style={{ color: "rgba(255,255,255,0.75)" }}
-              >
+                style={{ color: "rgba(255,255,255,0.75)" }}>
                 Login
               </Link>
-              <Link
-                to="/register"
+              <Link to="/register"
                 className="px-5 py-2 text-sm font-extrabold rounded-full transition-all hover:scale-105"
                 style={{
                   background: `linear-gradient(135deg,${GOLD},${GOLD2})`,
                   color: "#060d1c",
                   boxShadow: "0 4px 18px rgba(234,179,8,0.3)",
-                }}
-              >
+                }}>
                 Register Free
               </Link>
             </>
@@ -339,16 +299,13 @@ export default function Navbar() {
         <button
           className="flex md:hidden items-center justify-center w-9 h-9 rounded-lg transition-colors"
           style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
+          onClick={() => setOpen(!open)} aria-label="Toggle menu"
         >
-          {open
-            ? <X size={18} style={{ color: "#fff" }} />
-            : <Menu size={18} style={{ color: "#fff" }} />}
+          {open ? <X size={18} style={{ color: "#fff" }} /> : <Menu size={18} style={{ color: "#fff" }} />}
         </button>
       </div>
 
-      {/* ── Mobile drawer ── */}
+      {/* Mobile drawer */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -361,17 +318,13 @@ export default function Navbar() {
           >
             <div className="container py-5 flex flex-col gap-1">
 
-              {/* Home */}
-              <Link
-                to="/"
-                onClick={() => setOpen(false)}
+              <Link to="/" onClick={() => setOpen(false)}
                 className="flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold transition-all"
                 style={{
                   color: isActive("/") ? GOLD : "rgba(255,255,255,0.75)",
                   background: isActive("/") ? "rgba(234,179,8,0.08)" : "transparent",
                   borderLeft: isActive("/") ? `3px solid ${GOLD}` : "3px solid transparent",
-                }}
-              >
+                }}>
                 Home
                 {isActive("/") && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -379,23 +332,19 @@ export default function Navbar() {
                 )}
               </Link>
 
-              {/* Mobile Courses accordion */}
+              {/* Mobile courses accordion */}
               <div>
-                <button
-                  onClick={() => setMobileCoursesOpen(!mobileCoursesOpen)}
+                <button onClick={() => setMobileCoursesOpen(!mobileCoursesOpen)}
                   className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold transition-all"
                   style={{
                     color: isCoursesActive ? GOLD : "rgba(255,255,255,0.75)",
                     background: isCoursesActive ? "rgba(234,179,8,0.08)" : "transparent",
                     borderLeft: isCoursesActive ? `3px solid ${GOLD}` : "3px solid transparent",
-                  }}
-                >
+                  }}>
                   <span>Courses</span>
-                  <ChevronDown
-                    size={14}
+                  <ChevronDown size={14}
                     className={`transition-transform duration-200 ${mobileCoursesOpen ? "rotate-180" : ""}`}
-                    style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.4)" }}
-                  />
+                    style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.4)" }} />
                 </button>
 
                 <AnimatePresence>
@@ -407,33 +356,27 @@ export default function Navbar() {
                       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                       className="overflow-hidden ml-3 mt-1"
                     >
-                      <div
-                        className="rounded-xl overflow-hidden"
-                        style={{ border: "1px solid rgba(234,179,8,0.12)", background: "rgba(255,255,255,0.03)" }}
-                      >
-                        <Link
-                          to="/courses"
+                      <div className="rounded-xl overflow-hidden"
+                        style={{ border: "1px solid rgba(234,179,8,0.12)", background: "rgba(255,255,255,0.03)" }}>
+                        <Link to="/courses"
                           onClick={() => { setOpen(false); setMobileCoursesOpen(false); }}
                           className="flex items-center gap-2 px-3 py-2.5 border-b text-xs font-bold"
-                          style={{ color: GOLD, borderColor: "rgba(234,179,8,0.12)" }}
-                        >
+                          style={{ color: GOLD, borderColor: "rgba(234,179,8,0.12)" }}>
                           <GraduationCap size={12} />
                           Browse All Courses →
                         </Link>
                         {courses.map((course) => {
                           const Icon = course.icon;
+                          const active = location.pathname === course.to;
                           return (
-                            <Link
-                              key={course.to}
-                              to={course.to}
+                            <Link key={course.to} to={course.to}
                               onClick={() => { setOpen(false); setMobileCoursesOpen(false); }}
                               className="flex items-center gap-2.5 px-3 py-2.5 border-b last:border-0 transition-all"
                               style={{
                                 borderColor: "rgba(255,255,255,0.04)",
-                                color: location.pathname === course.to ? GOLD : "rgba(255,255,255,0.7)",
-                                background: location.pathname === course.to ? "rgba(234,179,8,0.07)" : "transparent",
-                              }}
-                            >
+                                color: active ? GOLD : "rgba(255,255,255,0.7)",
+                                background: active ? "rgba(234,179,8,0.07)" : "transparent",
+                              }}>
                               <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
                                 style={{ background: "rgba(234,179,8,0.1)" }}>
                                 <Icon size={11} style={{ color: GOLD }} />
@@ -448,19 +391,14 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
 
-              {/* About & Contact */}
               {navLinks.filter(l => l.to !== "/").map((l) => (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  onClick={() => setOpen(false)}
+                <Link key={l.to} to={l.to} onClick={() => setOpen(false)}
                   className="flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold transition-all"
                   style={{
                     color: isActive(l.to) ? GOLD : "rgba(255,255,255,0.75)",
                     background: isActive(l.to) ? "rgba(234,179,8,0.08)" : "transparent",
                     borderLeft: isActive(l.to) ? `3px solid ${GOLD}` : "3px solid transparent",
-                  }}
-                >
+                  }}>
                   {l.label}
                   {isActive(l.to) && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -483,46 +421,34 @@ export default function Navbar() {
                       <p className="text-[11px] capitalize" style={{ color: GOLD }}>{user.role}</p>
                     </div>
                   </div>
-                  <Link
-                    to={getDashboardPath(user.role)}
-                    onClick={() => setOpen(false)}
+                  <Link to={getDashboardPath(user.role)} onClick={() => setOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-3 rounded-xl text-sm font-semibold transition-all"
-                    style={{ color: "rgba(255,255,255,0.8)", background: "rgba(234,179,8,0.06)" }}
-                  >
+                    style={{ color: "rgba(255,255,255,0.8)", background: "rgba(234,179,8,0.06)" }}>
                     <LayoutDashboard size={15} style={{ color: GOLD }} />
                     My Dashboard
                   </Link>
-                  <button
-                    onClick={handleLogout}
+                  <button onClick={handleLogout}
                     className="flex items-center gap-2.5 px-3 py-3 rounded-xl text-sm font-semibold transition-all w-full mt-1"
-                    style={{ color: "#f87171", background: "rgba(239,68,68,0.06)" }}
-                  >
+                    style={{ color: "#f87171", background: "rgba(239,68,68,0.06)" }}>
                     <LogOut size={15} />
                     Sign Out
                   </button>
                 </>
               ) : (
                 <div className="flex gap-3">
-                  <Link
-                    to="/login"
-                    onClick={() => setOpen(false)}
+                  <Link to="/login" onClick={() => setOpen(false)}
                     className="flex-1 text-center py-2.5 rounded-full text-sm font-bold border transition-all"
-                    style={{ borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)" }}
-                  >
+                    style={{ borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)" }}>
                     Login
                   </Link>
-                  <Link
-                    to="/register"
-                    onClick={() => setOpen(false)}
+                  <Link to="/register" onClick={() => setOpen(false)}
                     className="flex-1 text-center py-2.5 rounded-full text-sm font-extrabold transition-all hover:scale-105"
-                    style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c" }}
-                  >
+                    style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c" }}>
                     Register Free
                   </Link>
                 </div>
               )}
 
-              {/* Mobile contact */}
               <div className="mt-3 rounded-xl p-3 flex flex-col gap-1.5"
                 style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(234,179,8,0.1)" }}>
                 <a href={`tel:${BUSINESS_INFO.phone}`}
@@ -538,6 +464,7 @@ export default function Navbar() {
                   {BUSINESS_INFO.email}
                 </a>
               </div>
+
             </div>
           </motion.div>
         )}
