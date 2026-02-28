@@ -6,13 +6,14 @@ import {
   RefreshCw, Play, Clock, Users, Star, CreditCard, Upload,
   X, AlertCircle, Copy, Check, LayoutDashboard, Compass,
   ChevronLeft, Menu, Bell, LogOut, DollarSign, FileText,
-  ChevronRight, Circle,
+  ChevronRight, MessageSquare, Trash2, Edit3,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { getMyEnrollments, type EnrolledCourse } from "@/api/enrollments";
 import { getCourses, type Course } from "@/api/courses";
 import { submitPayment, getMyPayments, type Payment } from "@/api/payments";
+import { getCourseReviews, getMyReview, submitReview, deleteReview, type Review, type ReviewStats } from "@/api/reviews";
 
 // ── Theme ─────────────────────────────────────────────────────────────
 const TEAL    = "#0d9488";
@@ -91,35 +92,303 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-const NavItem = ({ icon: Icon, label, active, onClick, badge, collapsed }: {
-  icon: any; label: string; active: boolean; onClick: () => void; badge?: number; collapsed: boolean;
-}) => (
-  <button
-    onClick={onClick}
-    title={collapsed ? label : undefined}
-    style={{
-      width: "100%", display: "flex", alignItems: "center",
-      gap: collapsed ? 0 : 10,
-      justifyContent: collapsed ? "center" : "flex-start",
-      padding: collapsed ? "11px 0" : "11px 16px",
-      border: "none", borderRadius: 12, cursor: "pointer",
-      fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-      transition: "all .18s",
-      background: active ? TEAL : "transparent",
-      color: active ? "#fff" : "#64748b",
-      position: "relative",
-    }}
-  >
-    <Icon size={16} />
-    {!collapsed && <span style={{ flex: 1, textAlign: "left" }}>{label}</span>}
-    {!collapsed && badge != null && badge > 0 && (
-      <span style={{ background: "#f97316", color: "#fff", fontSize: 9, fontWeight: 800, padding: "1px 6px", borderRadius: 99 }}>{badge}</span>
-    )}
-    {collapsed && badge != null && badge > 0 && (
-      <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#f97316" }} />
-    )}
-  </button>
+// ── Star Picker ───────────────────────────────────────────────────────
+const StarPicker = ({ value, onChange }: { value: number; onChange: (n: number) => void }) => {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div style={{ display: "flex", gap: 6 }}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          onMouseEnter={() => setHovered(n)}
+          onMouseLeave={() => setHovered(0)}
+          onClick={() => onChange(n)}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 2, lineHeight: 1 }}
+        >
+          <Star
+            size={28}
+            style={{
+              fill: n <= (hovered || value) ? "#f59e0b" : "#e2e8f0",
+              color: n <= (hovered || value) ? "#f59e0b" : "#e2e8f0",
+              transition: "all .15s",
+            }}
+          />
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// ── Inline Stars (display only) ───────────────────────────────────────
+const Stars = ({ rating, size = 13 }: { rating: number; size?: number }) => (
+  <span style={{ display: "inline-flex", gap: 2 }}>
+    {[1, 2, 3, 4, 5].map(i => (
+      <Star key={i} size={size} style={{ fill: i <= Math.round(rating) ? "#f59e0b" : "#e2e8f0", color: i <= Math.round(rating) ? "#f59e0b" : "#e2e8f0" }} />
+    ))}
+  </span>
 );
+
+// ── Review Modal ──────────────────────────────────────────────────────
+interface ReviewModalProps {
+  course: EnrolledCourse;
+  onClose: () => void;
+}
+
+const ReviewModal = ({ course, onClose }: ReviewModalProps) => {
+  const [reviews,     setReviews]     = useState<Review[]>([]);
+  const [stats,       setStats]       = useState<ReviewStats | null>(null);
+  const [myReview,    setMyReview]    = useState<Review | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [deleting,    setDeleting]    = useState(false);
+  const [editMode,    setEditMode]    = useState(false);
+  const [rating,      setRating]      = useState(0);
+  const [comment,     setComment]     = useState("");
+
+  // Load reviews + own review
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [{ reviews: rv, stats: st }, mine] = await Promise.all([
+          getCourseReviews(course.id),
+          getMyReview(course.id),
+        ]);
+        setReviews(rv);
+        setStats(st);
+        setMyReview(mine);
+        if (mine) { setRating(mine.rating); setComment(mine.comment ?? ""); }
+      } catch {
+        toast({ title: "Failed to load reviews", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [course.id]);
+
+  const handleSubmit = async () => {
+    if (rating === 0) { toast({ title: "Please select a star rating", variant: "destructive" }); return; }
+    setSubmitting(true);
+    try {
+      await submitReview(course.id, rating, comment);
+      toast({ title: myReview ? "Review updated! ✨" : "Review submitted! 🎉" });
+      // Reload
+      const [{ reviews: rv, stats: st }, mine] = await Promise.all([
+        getCourseReviews(course.id),
+        getMyReview(course.id),
+      ]);
+      setReviews(rv);
+      setStats(st);
+      setMyReview(mine);
+      setEditMode(false);
+    } catch (err: any) {
+      toast({ title: err.response?.data?.error ?? "Failed to submit review", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Delete your review?")) return;
+    setDeleting(true);
+    try {
+      await deleteReview(course.id);
+      toast({ title: "Review deleted" });
+      setMyReview(null);
+      setRating(0);
+      setComment("");
+      const { reviews: rv, stats: st } = await getCourseReviews(course.id);
+      setReviews(rv);
+      setStats(st);
+    } catch {
+      toast({ title: "Failed to delete review", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const showForm = !myReview || editMode;
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "#fff", borderRadius: 20, padding: 0, maxWidth: 520, width: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <CourseThumb title={course.title} image={course.image} size={44} />
+            <div>
+              <h3 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: NAVY, marginBottom: 2 }}>Course Reviews</h3>
+              <p style={{ fontSize: 12, color: "#64748b", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{course.title}</p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 22, lineHeight: 1, flexShrink: 0 }}>×</button>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{ overflowY: "auto", flex: 1 }}>
+
+          {/* Stats bar */}
+          {stats && !loading && (
+            <div style={{ padding: "16px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 20 }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 32, color: NAVY, lineHeight: 1 }}>{stats.avg || "—"}</p>
+                <Stars rating={stats.avg} size={14} />
+                <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{stats.total} review{stats.total !== 1 ? "s" : ""}</p>
+              </div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
+                {[5, 4, 3, 2, 1].map(n => {
+                  const count = stats.distribution[n] ?? 0;
+                  const pct   = stats.total ? Math.round((count / stats.total) * 100) : 0;
+                  return (
+                    <div key={n} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", width: 8 }}>{n}</span>
+                      <Star size={11} style={{ fill: "#f59e0b", color: "#f59e0b", flexShrink: 0 }} />
+                      <div style={{ flex: 1, height: 6, background: "#e2e8f0", borderRadius: 99, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${pct}%`, background: "#f59e0b", borderRadius: 99, transition: "width .5s ease" }} />
+                      </div>
+                      <span style={{ fontSize: 11, color: "#94a3b8", width: 24, textAlign: "right" }}>{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Write / Edit review section — only if course is completed */}
+          {course.completed ? (
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid #f1f5f9" }}>
+              {myReview && !editMode ? (
+                // Show existing review with edit/delete
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: TEAL, textTransform: "uppercase", letterSpacing: .5 }}>Your Review</p>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => setEditMode(true)}
+                        style={{ display: "flex", alignItems: "center", gap: 4, background: "#f1f5f9", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#64748b", fontFamily: "inherit" }}
+                      >
+                        <Edit3 size={11} /> Edit
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        style={{ display: "flex", alignItems: "center", gap: 4, background: "#fee2e2", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ef4444", fontFamily: "inherit" }}
+                      >
+                        <Trash2 size={11} /> {deleting ? "…" : "Delete"}
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ background: "#f8fafc", borderRadius: 12, padding: 14 }}>
+                    <Stars rating={myReview.rating} />
+                    {myReview.comment && (
+                      <p style={{ fontSize: 13, color: "#475569", marginTop: 8, lineHeight: 1.6 }}>{myReview.comment}</p>
+                    )}
+                    <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 8 }}>
+                      {new Date(myReview.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Form: new or edit
+                <div>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 12 }}>
+                    {myReview ? "Edit Your Review" : "Leave a Review"}
+                  </p>
+                  <div style={{ marginBottom: 14 }}>
+                    <p style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>Your Rating</p>
+                    <StarPicker value={rating} onChange={setRating} />
+                  </div>
+                  <div style={{ marginBottom: 14 }}>
+                    <p style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>Comment <span style={{ color: "#94a3b8", fontWeight: 400 }}>(optional)</span></p>
+                    <textarea
+                      value={comment}
+                      onChange={e => setComment(e.target.value)}
+                      placeholder="Share your experience with this course…"
+                      rows={3}
+                      style={{ width: "100%", borderRadius: 10, border: "1.5px solid #e2e8f0", padding: "10px 14px", fontSize: 13, fontFamily: "inherit", color: NAVY, resize: "vertical", outline: "none", lineHeight: 1.6 }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    {editMode && (
+                      <button
+                        onClick={() => { setEditMode(false); setRating(myReview!.rating); setComment(myReview!.comment ?? ""); }}
+                        style={{ flex: 1, padding: "10px 0", border: "1px solid #e2e8f0", borderRadius: 10, background: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 13, color: "#64748b" }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      onClick={handleSubmit}
+                      disabled={submitting || rating === 0}
+                      style={{ flex: 2, padding: "10px 0", background: rating > 0 ? `linear-gradient(135deg,${TEAL},${TEAL2})` : "#e2e8f0", color: rating > 0 ? "#fff" : "#94a3b8", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: rating > 0 ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all .2s" }}
+                    >
+                      {submitting ? "Saving…" : myReview ? "Update Review" : "Submit Review"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Not completed — locked message
+            <div style={{ padding: "16px 24px", background: "#fffbeb", borderBottom: "1px solid #fde68a", display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <AlertCircle size={15} style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 13, color: "#92400e" }}>
+                Complete this course to unlock the ability to leave a review.
+              </p>
+            </div>
+          )}
+
+          {/* Reviews list */}
+          <div style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+            {loading ? (
+              [1, 2, 3].map(i => (
+                <div key={i} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ height: 12, width: "40%", background: "#e8edf2", borderRadius: 6 }} />
+                  <div style={{ height: 10, width: "60%", background: "#f1f5f9", borderRadius: 6 }} />
+                  <div style={{ height: 10, width: "90%", background: "#f1f5f9", borderRadius: 6 }} />
+                </div>
+              ))
+            ) : reviews.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "32px 0" }}>
+                <MessageSquare size={28} style={{ color: "#cbd5e1", margin: "0 auto 8px" }} />
+                <p style={{ color: "#94a3b8", fontSize: 13 }}>No reviews yet. Be the first!</p>
+              </div>
+            ) : (
+              reviews.map(r => (
+                <div key={r.id} style={{ padding: 14, background: "#f8fafc", borderRadius: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: `linear-gradient(135deg,${TEAL},${NAVY})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 12, flexShrink: 0 }}>
+                        {r.student_name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{r.student_name}</p>
+                        <Stars rating={r.rating} size={11} />
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }}>
+                      {new Date(r.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </div>
+                  {r.comment && (
+                    <p style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, marginTop: 6 }}>{r.comment}</p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ── Payment Modal ─────────────────────────────────────────────────────
 const PaymentModal = ({ course, onClose, onSubmitted }: {
@@ -244,24 +513,56 @@ const PaymentModal = ({ course, onClose, onSubmitted }: {
   );
 };
 
+// ── NavItem ───────────────────────────────────────────────────────────
+const NavItem = ({ icon: Icon, label, active, onClick, badge, collapsed }: {
+  icon: any; label: string; active: boolean; onClick: () => void; badge?: number; collapsed: boolean;
+}) => (
+  <button
+    onClick={onClick}
+    title={collapsed ? label : undefined}
+    style={{
+      width: "100%", display: "flex", alignItems: "center",
+      gap: collapsed ? 0 : 10,
+      justifyContent: collapsed ? "center" : "flex-start",
+      padding: collapsed ? "11px 0" : "11px 16px",
+      border: "none", borderRadius: 12, cursor: "pointer",
+      fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+      transition: "all .18s",
+      background: active ? TEAL : "transparent",
+      color: active ? "#fff" : "#64748b",
+      position: "relative",
+    }}
+  >
+    <Icon size={16} />
+    {!collapsed && <span style={{ flex: 1, textAlign: "left" }}>{label}</span>}
+    {!collapsed && badge != null && badge > 0 && (
+      <span style={{ background: "#f97316", color: "#fff", fontSize: 9, fontWeight: 800, padding: "1px 6px", borderRadius: 99 }}>{badge}</span>
+    )}
+    {collapsed && badge != null && badge > 0 && (
+      <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#f97316" }} />
+    )}
+  </button>
+);
+
 // ── Main Component ────────────────────────────────────────────────────
 interface Props { defaultTab?: TabType; }
 
 export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation(); // ✅ INSIDE component
+  const location = useLocation();
 
-  const [sidebarOpen,  setSidebarOpen]  = useState(true);
-  const [tab,          setTab]          = useState<TabType>(defaultTab);
-  const [enrolled,     setEnrolled]     = useState<EnrolledCourse[]>([]);
-  const [explore,      setExplore]      = useState<Course[]>([]);
-  const [payments,     setPayments]     = useState<Payment[]>([]);
-  const [loadingE,     setLE]           = useState(true);
-  const [loadingX,     setLX]           = useState(false);
-  const [loadingP,     setLP]           = useState(false);
-  const [search,       setSearch]       = useState("");
-  const [payingCourse, setPayingCourse] = useState<Course | null>(null);
+  const [sidebarOpen,    setSidebarOpen]    = useState(true);
+  const [tab,            setTab]            = useState<TabType>(defaultTab);
+  const [enrolled,       setEnrolled]       = useState<EnrolledCourse[]>([]);
+  const [explore,        setExplore]        = useState<Course[]>([]);
+  const [payments,       setPayments]       = useState<Payment[]>([]);
+  const [loadingE,       setLE]             = useState(true);
+  const [loadingX,       setLX]             = useState(false);
+  const [loadingP,       setLP]             = useState(false);
+  const [search,         setSearch]         = useState("");
+  const [payingCourse,   setPayingCourse]   = useState<Course | null>(null);
+  const [reviewCourse,   setReviewCourse]   = useState<EnrolledCourse | null>(null); // ← NEW
 
   const enrolledIds     = new Set(enrolled.map(c => c.id));
   const pendingPayments = payments.filter(p => p.status === "pending");
@@ -288,39 +589,27 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
     finally { setLP(false); }
   }, []);
 
-  // Initial load
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchEnrolled(); fetchExplore(); fetchPayments();
   }, [isAuthenticated, fetchEnrolled, fetchExplore, fetchPayments]);
 
-  // ✅ Re-fetch when navigating back to this page (e.g. from course player)
   useEffect(() => {
     if (!isAuthenticated) return;
-    const timer = setTimeout(() => {
-      fetchEnrolled();
-      fetchPayments();
-    }, 600);
+    const timer = setTimeout(() => { fetchEnrolled(); fetchPayments(); }, 600);
     return () => clearTimeout(timer);
   }, [location, isAuthenticated, fetchEnrolled, fetchPayments]);
 
-  // Re-fetch on visibility change (switching browser tabs)
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === "visible" && isAuthenticated) {
-        fetchEnrolled();
-        fetchPayments();
-      }
+      if (document.visibilityState === "visible" && isAuthenticated) { fetchEnrolled(); fetchPayments(); }
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [isAuthenticated, fetchEnrolled, fetchPayments]);
 
-  // Re-fetch on window focus
   useEffect(() => {
-    const onFocus = () => {
-      if (isAuthenticated) fetchEnrolled();
-    };
+    const onFocus = () => { if (isAuthenticated) fetchEnrolled(); };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [isAuthenticated, fetchEnrolled]);
@@ -373,6 +662,14 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
           course={payingCourse}
           onClose={() => setPayingCourse(null)}
           onSubmitted={() => { setPayingCourse(null); fetchEnrolled(); fetchPayments(); }}
+        />
+      )}
+
+      {/* ── Review Modal ── */}
+      {reviewCourse && (
+        <ReviewModal
+          course={reviewCourse}
+          onClose={() => setReviewCourse(null)}
         />
       )}
 
@@ -460,7 +757,6 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                 </div>
               )}
 
-              {/* Continue learning */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                   <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 15, color: NAVY }}>Continue Learning</h2>
@@ -504,7 +800,6 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                 )}
               </div>
 
-              {/* Suggested */}
               {explore.filter(c => !enrolledIds.has(c.id)).length > 0 && (
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -580,9 +875,24 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                         </svg>
                         <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: NAVY }}>{c.progress}%</span>
                       </div>
-                      <button onClick={() => navigate(`/learn/${c.id}`)} className="btnt" style={{ padding: "8px 14px", fontSize: 11, borderRadius: 10 }}>
-                        <Play size={11} /> {c.progress > 0 ? "Continue" : "Start"}
-                      </button>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
+                        <button onClick={() => navigate(`/learn/${c.id}`)} className="btnt" style={{ padding: "7px 12px", fontSize: 11, borderRadius: 10 }}>
+                          <Play size={11} /> {c.progress > 0 ? "Continue" : "Start"}
+                        </button>
+                        {/* ── Review button — shown for all, modal handles the lock ── */}
+                        <button
+                          onClick={() => setReviewCourse(c)}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                            padding: "6px 12px", borderRadius: 10, border: `1px solid ${c.completed ? TEAL + "40" : "#e2e8f0"}`,
+                            background: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+                            fontSize: 11, color: c.completed ? TEAL : "#94a3b8", transition: "all .15s",
+                          }}
+                        >
+                          <MessageSquare size={11} />
+                          {c.completed ? "Review" : "Reviews"}
+                        </button>
+                      </div>
                     </div>
                   ))}
               </div>
