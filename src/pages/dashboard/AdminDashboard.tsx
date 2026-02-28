@@ -318,7 +318,7 @@ const normalizeCourse = (c: any): Course => ({
   const loadCourses = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await getCourses({ limit: 200 });
+      const r = await getCourses({ limit: 200, admin: true });
       const raw = r.courses ?? r.data ?? r ?? [];
       setCourses(Array.isArray(raw) ? raw.map(normalizeCourse) : []);
     } catch { toast({ title: "Failed to load courses", variant: "destructive" }); }
