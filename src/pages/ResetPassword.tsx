@@ -3,15 +3,12 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.jpeg';
-import axios from 'axios';
+import { resetPassword } from '@/api/auth';
 
 const NAVY  = '#0b1f3a';
 const NAVY2 = '#0f2d56';
 const GOLD  = '#EAB308';
 const GOLD2 = '#CA8A04';
-
-// Same base URL as ForgotPassword.tsx
-const API = 'https://api.handygiditrainingcentre.com';
 
 const STR_LABEL = ['Too short','Weak','Fair','Good','Strong'];
 const STR_COLOR = ['#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
@@ -52,7 +49,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      await axios.post(`${API}/reset-password.php`, { token, password: pw });
+      await resetPassword(token, pw);
       setDone(true);
       toast.success('Password updated!');
       setTimeout(() => navigate('/login'), 3000);
