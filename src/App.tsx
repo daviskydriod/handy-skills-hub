@@ -51,6 +51,8 @@ const App = () => (
             <Route path="/contact"     element={<Contact />} />
             <Route path="/login"       element={<Login />} />
             <Route path="/register"    element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password"  element={<ResetPassword />} />
 
             {/* ── Course Player ───────────────────────────────────
                 Full-screen dark UI — NO DashboardLayout wrapper.
