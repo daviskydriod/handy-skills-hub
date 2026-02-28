@@ -313,6 +313,8 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
     { key: "payments",   label: "Payments",  icon: DollarSign, badge: pendingPayments.length },
   ];
 
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
   return (
     <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: mobile ? "#f6f8fb" : "#f6f8fb", display: "flex", flexDirection: "column" }}>
       <style>{`
@@ -410,26 +412,93 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
         /* ══ MOBILE LAYOUT ══ */
         <div style={{ flex: 1, display: "flex", flexDirection: "column", paddingBottom: 70 }}>
           {/* Mobile Header */}
-          <header style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", position: "sticky", top: 0, zIndex: 30, padding: "14px 16px 12px", display: "flex", alignItems: "center", gap: 12 }}>
-            <UserAvatar name={user?.name} size={36} />
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>
-                {tab === "overview" ? `Good day 👋` : tab === "my-courses" ? "My Courses" : tab === "explore" ? "Explore" : "Payments"}
-              </p>
-              <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: NAVY, lineHeight: 1.2 }}>
-                {tab === "overview" ? (user?.name?.split(" ")[0] ?? "Student") : tab === "my-courses" ? `${total} enrolled` : tab === "explore" ? `${filteredExplore.length} courses` : `${payments.length} records`}
-              </p>
-            </div>
-            <button onClick={() => { fetchEnrolled(); fetchExplore(); fetchPayments(); }}
-              style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
-              <RefreshCw size={14} />
-            </button>
-            <button style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b", position: "relative" }}>
-              <Bell size={16} />
-              {pendingPayments.length > 0 && <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#f97316" }} />}
-            </button>
-          </header>
 
+          {/* Mobile Header */}
+<header style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", position: "sticky", top: 0, zIndex: 30, padding: "14px 16px 12px", display: "flex", alignItems: "center", gap: 12 }}>
+  
+  {/* Avatar with dropdown */}
+  <div style={{ position: "relative" }}>
+    <button
+      onClick={() => setShowProfileMenu(o => !o)}
+      style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+      <UserAvatar name={user?.name} size={36} />
+    </button>
+
+    {/* Dropdown */}
+    {showProfileMenu && (
+      <>
+        {/* Backdrop */}
+        <div
+          onClick={() => setShowProfileMenu(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 90 }}
+        />
+        <div style={{
+          position: "absolute", top: 44, left: 0, zIndex: 100,
+          background: "#fff", borderRadius: 14, border: "1px solid #e8edf2",
+          boxShadow: "0 8px 24px rgba(0,0,0,.12)", minWidth: 200, padding: 8,
+        }}>
+          {/* User info */}
+          <div style={{ padding: "10px 12px 12px", borderBottom: "1px solid #f1f5f9", marginBottom: 6 }}>
+            <p style={{ fontWeight: 700, fontSize: 13, color: NAVY }}>{user?.name}</p>
+            <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{user?.email}</p>
+          </div>
+
+          {/* Nav items */}
+          {navItems.map(({ key, label, icon: Icon, badge }) => (
+            <button key={key} onClick={() => { setTab(key as TabType); setShowProfileMenu(false); }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px", border: "none", borderRadius: 10, cursor: "pointer",
+                fontFamily: "inherit", fontSize: 13, fontWeight: 600, transition: "all .15s",
+                background: tab === key ? TEAL + "12" : "transparent",
+                color: tab === key ? TEAL : "#475569",
+              }}>
+              <Icon size={15} />
+              <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
+              {badge != null && badge > 0 && (
+                <span style={{ background: "#f97316", color: "#fff", fontSize: 9, fontWeight: 800, padding: "1px 6px", borderRadius: 99 }}>{badge}</span>
+              )}
+            </button>
+          ))}
+
+          {/* Sign out */}
+          <div style={{ borderTop: "1px solid #f1f5f9", marginTop: 6, paddingTop: 6 }}>
+            <button
+              onClick={() => { logout(); navigate("/"); }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px", border: "none", borderRadius: 10, cursor: "pointer",
+                fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                background: "transparent", color: "#ef4444",
+              }}>
+              <LogOut size={15} />
+              Sign out
+            </button>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+
+  <div style={{ flex: 1 }}>
+    <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>
+      {tab === "overview" ? `Good day 👋` : tab === "my-courses" ? "My Courses" : tab === "explore" ? "Explore" : "Payments"}
+    </p>
+    <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: NAVY, lineHeight: 1.2 }}>
+      {tab === "overview" ? (user?.name?.split(" ")[0] ?? "Student") : tab === "my-courses" ? `${total} enrolled` : tab === "explore" ? `${filteredExplore.length} courses` : `${payments.length} records`}
+    </p>
+  </div>
+
+  <button onClick={() => { fetchEnrolled(); fetchExplore(); fetchPayments(); }}
+    style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
+    <RefreshCw size={14} />
+  </button>
+  <button style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b", position: "relative" }}>
+    <Bell size={16} />
+    {pendingPayments.length > 0 && <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#f97316" }} />}
+  </button>
+</header>
+      
           {/* Mobile Main */}
           <main style={{ flex: 1, padding: "16px 16px 8px" }}>
             <DashboardContent {...{ tab, setTab, mobile, enrolled, explore, payments, loadingE, loadingX, loadingP, search, setSearch, filteredExplore, enrolledIds, pendingPayments, total, completed, inProgress, avgProgress, user, navigate, setPayingCourse, setReviewCourse, fetchEnrolled, fetchExplore, fetchPayments }} />
