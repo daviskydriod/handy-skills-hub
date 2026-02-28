@@ -470,10 +470,6 @@ function DashboardContent({
   fetchEnrolled, fetchExplore, fetchPayments,
 }: any) {
 
-  const TEAL  = "#0d9488";
-  const TEAL2 = "#0f766e";
-  const NAVY  = "#0b1f3a";
-
   return (
     <>
       {/* ════ OVERVIEW ════ */}
@@ -854,53 +850,4 @@ function DashboardContent({
     </>
   );
 }
-
-
-const TEAL  = "#0d9488";
-const TEAL2 = "#0f766e";
-
-// Re-export small components used inside DashboardContent
-function SkeletonCard() {
-  return (
-    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e8edf2", padding: 16 }}>
-      <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ width: 52, height: 52, borderRadius: 10, background: "#e8edf2", flexShrink: 0 }} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ height: 13, width: "70%", background: "#e8edf2", borderRadius: 6 }} />
-          <div style={{ height: 10, width: "45%", background: "#f1f5f9", borderRadius: 6 }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-function SkeletonRow() {
-  return (
-    <div style={{ display: "flex", gap: 12, padding: "14px 16px", borderBottom: "1px solid #f1f5f9", alignItems: "center" }}>
-      <div style={{ width: 44, height: 44, borderRadius: 10, background: "#e8edf2", flexShrink: 0 }} />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-        <div style={{ height: 13, width: "60%", background: "#e8edf2", borderRadius: 6 }} />
-        <div style={{ height: 10, width: "35%", background: "#f1f5f9", borderRadius: 6 }} />
-      </div>
-    </div>
-  );
-}
-
-function CourseThumb({ image, title, size = 44 }: { image?: string | null; title?: string; size?: number }) {
-  const cols = [TEAL, "#0891b2", "#7c3aed", "#db2777", "#d97706", "#16a34a"];
-  const col  = cols[(title?.charCodeAt(0) ?? 0) % cols.length];
-  return image ? (
-    <img src={image} alt={title} style={{ width: size, height: size, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
-  ) : (
-    <div style={{ width: size, height: size, borderRadius: 10, background: col + "18", border: `1px solid ${col}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-      <BookOpen size={Math.round(size * 0.38)} style={{ color: col }} />
-    </div>
-  );
-}
-
-function ProgressBar({ pct }: { pct: number }) {
-  return (
-    <div style={{ width: "100%", background: "#e2e8f0", borderRadius: 99, height: 6, overflow: "hidden" }}>
-      <div style={{ height: "100%", borderRadius: 99, background: `linear-gradient(90deg,${TEAL},${TEAL2})`, width: `${pct}%`, transition: "width .5s ease" }} />
-    </div>
-  );
 }
