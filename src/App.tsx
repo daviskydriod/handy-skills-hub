@@ -17,6 +17,8 @@ import Contact      from "./pages/Contact";
 import Login        from "./pages/Login";
 import Register     from "./pages/Register";
 import NotFound     from "./pages/NotFound";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // Pages — course player (full-screen, no DashboardLayout)
 import StudentCoursePlayer from "./pages/StudentCoursePlayer";
