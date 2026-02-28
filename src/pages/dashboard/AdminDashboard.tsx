@@ -1210,7 +1210,7 @@ export default function AdminDashboard() {
                 <div>
                   <p style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontWeight:500, marginBottom:3 }}>Total Approved Revenue</p>
                   <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:22, color:"#fff" }}>
-                  fmt(payments.filter(p=>p.status==="approved").reduce((a,p)=>a+parseFloat(String(p.amount??0)),0))
+                    {fmt(payments.filter(p=>p.status==="approved").reduce((a,p)=>a+parseFloat(String(p.amount??0)),0))}
                   </p>
                 </div>
               </div>
