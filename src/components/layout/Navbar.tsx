@@ -347,48 +347,47 @@ export default function Navbar() {
                     style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.4)" }} />
                 </button>
 
-                <AnimatePresence>
-                  {mobileCoursesOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                      className="overflow-hidden ml-3 mt-1"
-                    >
-                      <div className="rounded-xl overflow-hidden"
-                        style={{ border: "1px solid rgba(234,179,8,0.12)", background: "rgba(255,255,255,0.03)" }}>
-                        <Link to="/courses"
-                          onClick={() => { setOpen(false); setMobileCoursesOpen(false); }}
-                          className="flex items-center gap-2 px-3 py-2.5 border-b text-xs font-bold"
-                          style={{ color: GOLD, borderColor: "rgba(234,179,8,0.12)" }}>
-                          <GraduationCap size={12} />
-                          Browse All Courses →
-                        </Link>
-                        {courses.map((course) => {
-                          const Icon = course.icon;
-                          const active = location.pathname === course.to;
-                          return (
-                            <Link key={course.to} to={course.to}
-                              onClick={() => { setOpen(false); setMobileCoursesOpen(false); }}
-                              className="flex items-center gap-2.5 px-3 py-2.5 border-b last:border-0 transition-all"
-                              style={{
-                                borderColor: "rgba(255,255,255,0.04)",
-                                color: active ? GOLD : "rgba(255,255,255,0.7)",
-                                background: active ? "rgba(234,179,8,0.07)" : "transparent",
-                              }}>
-                              <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-                                style={{ background: "rgba(234,179,8,0.1)" }}>
-                                <Icon size={11} style={{ color: GOLD }} />
-                              </div>
-                              <span className="text-xs font-semibold">{course.label}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {mobileCoursesOpen && (
+                  <div className="ml-3 mt-1">
+                    <div className="rounded-xl overflow-hidden"
+                      style={{ border: "1px solid rgba(234,179,8,0.12)", background: "rgba(255,255,255,0.03)" }}>
+                      <Link to="/courses"
+                        onClick={() => { setOpen(false); setMobileCoursesOpen(false); }}
+                        className="flex items-center gap-2 px-3 py-2.5 border-b text-xs font-bold"
+                        style={{ color: GOLD, borderColor: "rgba(234,179,8,0.12)", display: "flex" }}>
+                        <GraduationCap size={12} />
+                        Browse All Courses →
+                      </Link>
+                      {courses.map((course) => {
+                        const Icon = course.icon;
+                        const active = location.pathname === course.to;
+                        return (
+                          <Link key={course.to} to={course.to}
+                            onClick={() => { setOpen(false); setMobileCoursesOpen(false); }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              padding: "10px 12px",
+                              borderBottom: "1px solid rgba(255,255,255,0.04)",
+                              color: active ? GOLD : "rgba(255,255,255,0.7)",
+                              background: active ? "rgba(234,179,8,0.07)" : "transparent",
+                              textDecoration: "none",
+                            }}>
+                            <div style={{
+                              width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                              background: "rgba(234,179,8,0.1)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <Icon size={11} style={{ color: GOLD }} />
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 600 }}>{course.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {navLinks.filter(l => l.to !== "/").map((l) => (
