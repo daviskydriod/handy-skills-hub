@@ -1,58 +1,406 @@
-// File: frontend/src/pages/CourseDetail.tsx
-import { useState } from 'react';
+// File: src/pages/CourseDetail.tsx
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Star, Clock, BookOpen, Users, PlayCircle, FileText,
   Award, CheckCircle, MessageCircle, ArrowLeft, Loader2,
-  ChevronDown, ChevronRight, Film,
+  ChevronDown, ChevronRight, Film, ThumbsUp, Trash2, Edit3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/components/layout/MainLayout';
 import { BUSINESS_INFO } from '@/data/mockData';
 import { useCourse } from '../hooks/useCourses';
+import { getCourseReviews, submitReview, deleteReview, getMyReview } from '@/api/reviews';
+import type { Review, ReviewStats } from '@/api/reviews';
 import type { CoursePart, CourseModule, Lesson } from '@/api/courses';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 const NAVY = '#0b1f3a';
 const GOLD = '#EAB308';
 const GOLD2 = '#CA8A04';
 const TEAL = '#0d9488';
 
-// ── Single lesson row — NO video preview, NO video link shown ─────────
-function LessonRow({ lesson, lessonIdx }: {
-  lesson: Lesson; lessonIdx: number;
+// ── Star renderer ─────────────────────────────────────────────────────
+function Stars({ rating, size = 14, interactive = false, onChange }: {
+  rating: number;
+  size?: number;
+  interactive?: boolean;
+  onChange?: (r: number) => void;
 }) {
-  const hasVideo = !!lesson.videoUrl;
+  const [hovered, setHovered] = useState(0);
+  return (
+    <span style={{ display: 'inline-flex', gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          size={size}
+          style={{
+            color: (interactive ? (hovered || rating) : rating) >= s ? GOLD : '#d1d5db',
+            fill:  (interactive ? (hovered || rating) : rating) >= s ? GOLD : 'none',
+            cursor: interactive ? 'pointer' : 'default',
+            transition: 'color .1s, fill .1s',
+          }}
+          onMouseEnter={() => interactive && setHovered(s)}
+          onMouseLeave={() => interactive && setHovered(0)}
+          onClick={() => interactive && onChange?.(s)}
+        />
+      ))}
+    </span>
+  );
+}
+
+// ── Review Card ───────────────────────────────────────────────────────
+function ReviewCard({ review, isOwn, onDelete }: {
+  review: Review;
+  isOwn: boolean;
+  onDelete?: () => void;
+}) {
+  const initials = review.student_name
+    ? review.student_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : '??';
+
+  const date = new Date(review.created_at).toLocaleDateString('en-NG', {
+    year: 'numeric', month: 'short', day: 'numeric',
+  });
 
   return (
-    <div style={{ borderBottom: '1px solid #f1f5f9' }}>
+    <div style={{
+      background: '#fff',
+      border: isOwn ? `1.5px solid ${GOLD}60` : '1px solid #e8edf2',
+      borderRadius: 14,
+      padding: '16px 18px',
+      position: 'relative',
+    }}>
+      {isOwn && (
+        <span style={{
+          position: 'absolute', top: 12, left: 18,
+          fontSize: 10, fontWeight: 800, color: GOLD2,
+          background: GOLD + '18', padding: '2px 8px',
+          borderRadius: 99, border: `1px solid ${GOLD}40`,
+        }}>
+          Your Review
+        </span>
+      )}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginTop: isOwn ? 20 : 0 }}>
+        <div style={{
+          width: 38, height: 38, borderRadius: 10,
+          background: `linear-gradient(135deg,${NAVY},#0f2d56)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', fontSize: 13, fontWeight: 800, flexShrink: 0,
+        }}>
+          {initials}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{review.student_name}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                <Stars rating={review.rating} size={12} />
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>{date}</span>
+              </div>
+            </div>
+            {isOwn && onDelete && (
+              <button
+                onClick={onDelete}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#ef4444', padding: 4, borderRadius: 6,
+                  display: 'flex', alignItems: 'center',
+                }}
+                title="Delete review"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+          {review.comment && (
+            <p style={{ fontSize: 13, color: '#475569', marginTop: 8, lineHeight: 1.6 }}>
+              {review.comment}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Rating Distribution Bar ───────────────────────────────────────────
+function DistBar({ label, count, total }: { label: string; count: number; total: number }) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+      <span style={{ width: 28, color: '#64748b', flexShrink: 0 }}>{label}</span>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '11px 20px',
+        flex: 1, height: 7, borderRadius: 99,
+        background: '#f1f5f9', overflow: 'hidden',
       }}>
-        {/* Lesson number badge */}
+        <div style={{
+          width: `${pct}%`, height: '100%',
+          background: `linear-gradient(90deg,${GOLD},${GOLD2})`,
+          borderRadius: 99, transition: 'width .5s ease',
+        }} />
+      </div>
+      <span style={{ width: 28, color: '#94a3b8', flexShrink: 0, textAlign: 'right' }}>{count}</span>
+    </div>
+  );
+}
+
+// ── Reviews Tab Component ─────────────────────────────────────────────
+function ReviewsTab({ courseId }: { courseId: number }) {
+  const { user } = useAuth();
+  const [reviews, setReviews]     = useState<Review[]>([]);
+  const [stats, setStats]         = useState<ReviewStats | null>(null);
+  const [myReview, setMyReview]   = useState<Review | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting]   = useState(false);
+  const [showForm, setShowForm]   = useState(false);
+  const [rating, setRating]       = useState(5);
+  const [comment, setComment]     = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await getCourseReviews(courseId);
+      setReviews(data.reviews);
+      setStats(data.stats);
+
+      if (user) {
+        try {
+          const mine = await getMyReview(courseId);
+          setMyReview(mine);
+          if (mine) { setRating(mine.rating); setComment(mine.comment ?? ''); }
+        } catch { /* not enrolled or no review — fine */ }
+      }
+    } catch {
+      toast.error('Failed to load reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [courseId]);
+
+  const handleSubmit = async () => {
+    if (!rating) { toast.error('Please select a rating'); return; }
+    setSubmitting(true);
+    try {
+      await submitReview(courseId, rating, comment);
+      toast.success(myReview ? 'Review updated!' : 'Review submitted!');
+      setShowForm(false);
+      await load();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error ?? 'Failed to submit review');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Delete your review?')) return;
+    setDeleting(true);
+    try {
+      await deleteReview(courseId);
+      toast.success('Review deleted');
+      setMyReview(null);
+      setShowForm(false);
+      setRating(5);
+      setComment('');
+      await load();
+    } catch {
+      toast.error('Failed to delete review');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+        <Loader2 size={24} style={{ color: GOLD, animation: 'spin 1s linear infinite' }} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* ── Stats summary ── */}
+      {stats && stats.total > 0 && (
+        <div style={{
+          background: '#fff', border: '1px solid #e8edf2',
+          borderRadius: 16, padding: '20px 24px',
+          display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center',
+        }}>
+          {/* Big avg */}
+          <div style={{ textAlign: 'center', minWidth: 80 }}>
+            <p style={{ fontSize: 44, fontWeight: 900, color: NAVY, lineHeight: 1 }}>
+              {stats.avg.toFixed(1)}
+            </p>
+            <Stars rating={Math.round(stats.avg)} size={16} />
+            <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+              {stats.total} review{stats.total !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          {/* Distribution bars */}
+          <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[5, 4, 3, 2, 1].map(s => (
+              <DistBar
+                key={s}
+                label={`${s}★`}
+                count={stats.distribution[s] ?? 0}
+                total={stats.total}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Write / edit review (logged in students) ── */}
+      {user?.role === 'student' && (
+        <div style={{
+          background: '#fff', border: `1.5px solid ${NAVY}18`,
+          borderRadius: 14, padding: '16px 18px',
+        }}>
+          {!showForm ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <p style={{ fontSize: 13, color: '#64748b' }}>
+                {myReview
+                  ? 'You\'ve already reviewed this course.'
+                  : 'Complete the course to leave a review.'}
+              </p>
+              <button
+                onClick={() => setShowForm(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: `linear-gradient(135deg,${GOLD},${GOLD2})`,
+                  color: '#060d1c', border: 'none', borderRadius: 8,
+                  padding: '8px 14px', fontWeight: 800, fontSize: 12,
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                <Edit3 size={12} />
+                {myReview ? 'Edit Review' : 'Write a Review'}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>
+                {myReview ? 'Update your review' : 'Write a review'}
+              </p>
+
+              {/* Star picker */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 12, color: '#64748b' }}>Rating:</span>
+                <Stars rating={rating} size={22} interactive onChange={setRating} />
+                <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                  {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][rating]}
+                </span>
+              </div>
+
+              {/* Comment */}
+              <textarea
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                placeholder="Share your experience (optional)…"
+                rows={3}
+                style={{
+                  width: '100%', padding: '10px 12px',
+                  border: '1.5px solid #e2e8f0', borderRadius: 10,
+                  fontSize: 13, color: NAVY, resize: 'vertical',
+                  fontFamily: 'inherit', outline: 'none',
+                  background: '#f8fafc',
+                }}
+              />
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  style={{
+                    background: `linear-gradient(135deg,${GOLD},${GOLD2})`,
+                    color: '#060d1c', border: 'none', borderRadius: 8,
+                    padding: '9px 18px', fontWeight: 800, fontSize: 12,
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    opacity: submitting ? 0.6 : 1,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  {submitting && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />}
+                  {myReview ? 'Update' : 'Submit'}
+                </button>
+                <button
+                  onClick={() => setShowForm(false)}
+                  style={{
+                    background: '#f1f5f9', color: '#64748b',
+                    border: 'none', borderRadius: 8,
+                    padding: '9px 14px', fontWeight: 600, fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Review list ── */}
+      {reviews.length === 0 ? (
+        <div style={{
+          background: '#fff', border: '1px solid #e8edf2',
+          borderRadius: 14, padding: '32px 20px', textAlign: 'center',
+        }}>
+          <ThumbsUp size={28} style={{ color: '#d1d5db', margin: '0 auto 10px' }} />
+          <p style={{ fontSize: 14, color: '#94a3b8', fontWeight: 600 }}>No reviews yet</p>
+          <p style={{ fontSize: 12, color: '#cbd5e1', marginTop: 4 }}>
+            Be the first to review this course after completing it!
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {reviews.map(r => (
+            <ReviewCard
+              key={r.id}
+              review={r}
+              isOwn={user?.id === r.student_id}
+              onDelete={user?.id === r.student_id ? handleDelete : undefined}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Single lesson row ─────────────────────────────────────────────────
+function LessonRow({ lesson, lessonIdx }: { lesson: Lesson; lessonIdx: number }) {
+  const hasVideo = !!lesson.videoUrl;
+  return (
+    <div style={{ borderBottom: '1px solid #f1f5f9' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 20px' }}>
         <span style={{
           minWidth: 22, height: 22, borderRadius: 6,
           background: TEAL + '18', color: TEAL,
           fontSize: 10, fontWeight: 800,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
           {lessonIdx + 1}
         </span>
-
-        {/* Show icon type but NOT the actual link */}
         {hasVideo
           ? <Film size={13} style={{ color: GOLD, flexShrink: 0 }} />
           : <FileText size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
         }
-
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: NAVY, lineHeight: 1.3 }}>
             {lesson.title || `Lesson ${lessonIdx + 1}`}
           </p>
         </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {lesson.duration && (
             <span style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -74,12 +422,9 @@ function LessonRow({ lesson, lessonIdx }: {
   );
 }
 
-// ── Module block (collapsible) ────────────────────────────────────────
-function ModuleBlock({ mod, modIdx }: {
-  mod: CourseModule; modIdx: number;
-}) {
+// ── Module block ──────────────────────────────────────────────────────
+function ModuleBlock({ mod, modIdx }: { mod: CourseModule; modIdx: number }) {
   const [open, setOpen] = useState(modIdx === 0);
-
   return (
     <div style={{ marginBottom: 8, border: '1px solid #e8edf2', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
       <div
@@ -101,12 +446,8 @@ function ModuleBlock({ mod, modIdx }: {
           {modIdx + 1}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontWeight: 700, fontSize: 13, color: NAVY }}>
-            {mod.title || `Module ${modIdx + 1}`}
-          </p>
-          {mod.description && (
-            <p style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{mod.description}</p>
-          )}
+          <p style={{ fontWeight: 700, fontSize: 13, color: NAVY }}>{mod.title || `Module ${modIdx + 1}`}</p>
+          {mod.description && <p style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{mod.description}</p>}
         </div>
         <span style={{ fontSize: 11, color: '#94a3b8', marginRight: 4 }}>
           {mod.lessons?.length ?? 0} lesson{(mod.lessons?.length ?? 0) !== 1 ? 's' : ''}
@@ -116,25 +457,17 @@ function ModuleBlock({ mod, modIdx }: {
           : <ChevronRight size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
         }
       </div>
-
       {open && (mod.lessons ?? []).map((lesson, li) => (
-        <LessonRow
-          key={lesson.id ?? li}
-          lesson={lesson}
-          lessonIdx={li}
-        />
+        <LessonRow key={lesson.id ?? li} lesson={lesson} lessonIdx={li} />
       ))}
     </div>
   );
 }
 
 // ── Part block ────────────────────────────────────────────────────────
-function PartBlock({ part, partIdx, totalParts }: {
-  part: CoursePart; partIdx: number; totalParts: number;
-}) {
+function PartBlock({ part, partIdx, totalParts }: { part: CoursePart; partIdx: number; totalParts: number }) {
   const [open, setOpen] = useState(true);
   const totalLessons = (part.modules ?? []).reduce((a, m) => a + (m.lessons?.length ?? 0), 0);
-
   return (
     <div style={{ marginBottom: 16, borderRadius: 14, overflow: 'hidden', border: `1.5px solid ${NAVY}18` }}>
       <div
@@ -176,7 +509,6 @@ function PartBlock({ part, partIdx, totalParts }: {
           }
         </div>
       </div>
-
       {open && (
         <div style={{ background: '#f8fafc', padding: '12px 12px 4px' }}>
           {(part.modules ?? []).map((mod, mi) => (
@@ -229,7 +561,6 @@ export default function CourseDetail() {
   )}`;
 
   const hasParts = (course.content?.parts?.length ?? 0) > 0;
-
   const totalModules = hasParts
     ? course.content!.parts.reduce((a, p) => a + (p.modules?.length ?? 0), 0)
     : 0;
@@ -238,14 +569,13 @@ export default function CourseDetail() {
         a + (p.modules ?? []).reduce((b, m) => b + (m.lessons?.length ?? 0), 0), 0)
     : course.lessons;
 
-  // ✅ Enroll button — goes to register page with course context
   const handleEnroll = () => {
     navigate(`/register?redirect=/learn/${course.id}&course=${encodeURIComponent(course.title)}`);
   };
 
   return (
     <MainLayout>
-      {/* ── PAGE HERO — no description ── */}
+      {/* ── PAGE HERO ── */}
       <section className="py-10 md:py-16 text-white"
         style={{ background: `linear-gradient(135deg,#060d1c 0%,${NAVY} 60%,#0f2d56 100%)` }}>
         <div className="container">
@@ -256,7 +586,6 @@ export default function CourseDetail() {
                 {course.category}
               </span>
               <h1 className="font-heading font-bold text-2xl md:text-4xl mt-2 mb-4">{course.title}</h1>
-              {/* ✅ NO description here */}
               <div className="flex flex-wrap items-center gap-4 text-sm opacity-80">
                 <span className="flex items-center gap-1">
                   <Star size={14} style={{ color: GOLD, fill: GOLD }} /> {course.rating}
@@ -309,7 +638,18 @@ export default function CourseDetail() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="instructor">Instructor</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                <TabsTrigger value="reviews">
+                  Reviews
+                  {course.rating > 0 && (
+                    <span style={{
+                      marginLeft: 6, fontSize: 10, fontWeight: 800,
+                      padding: '1px 6px', borderRadius: 99,
+                      background: GOLD + '20', color: GOLD2,
+                    }}>
+                      {course.rating}★
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
 
               {/* ── OVERVIEW ── */}
@@ -336,7 +676,7 @@ export default function CourseDetail() {
                 </div>
               </TabsContent>
 
-              {/* ── CURRICULUM — no video previews, no clickable links ── */}
+              {/* ── CURRICULUM ── */}
               <TabsContent value="curriculum">
                 {hasParts ? (
                   <div>
@@ -352,8 +692,6 @@ export default function CourseDetail() {
                       <span>{totalLessonsFromContent} lesson{totalLessonsFromContent !== 1 ? 's' : ''}</span>
                       {course.duration && <span>{course.duration} total</span>}
                     </div>
-
-                    {/* ✅ Enroll prompt banner */}
                     <div style={{
                       background: `linear-gradient(135deg,${NAVY}f0,#0f2d56)`,
                       borderRadius: 12, padding: '14px 18px', marginBottom: 16,
@@ -375,7 +713,6 @@ export default function CourseDetail() {
                         Enroll Now →
                       </button>
                     </div>
-
                     {course.content!.parts.map((part, pi) => (
                       <PartBlock
                         key={part.id ?? pi}
@@ -427,9 +764,7 @@ export default function CourseDetail() {
 
               {/* ── REVIEWS ── */}
               <TabsContent value="reviews">
-                <div className="bg-white rounded-2xl border border-slate-100 p-6 text-center text-sm text-slate-400">
-                  No reviews yet. Be the first to review this course!
-                </div>
+                <ReviewsTab courseId={Number(id)} />
               </TabsContent>
             </Tabs>
           </div>
@@ -442,7 +777,6 @@ export default function CourseDetail() {
                 alt={course.title}
                 className="w-full rounded-xl mb-4 aspect-video object-cover"
               />
-
               <p className="font-heading font-bold text-2xl mb-1" style={{ color: NAVY }}>
                 {course.price === 0
                   ? <span className="text-emerald-500">Free</span>
@@ -455,8 +789,6 @@ export default function CourseDetail() {
                 </span>
               )}
               <p className="text-xs text-slate-400 mb-4">Flexible payment plans available</p>
-
-              {/* ✅ Enroll Now → goes to register/login page */}
               <Button
                 className="w-full mb-2 text-sm font-bold border-0"
                 style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: '#060d1c' }}
@@ -478,7 +810,6 @@ export default function CourseDetail() {
               <Button variant="outline" className="w-full" size="sm" asChild>
                 <Link to="/courses"><ArrowLeft size={13} className="mr-1" /> Back to Courses</Link>
               </Button>
-
               <div className="mt-6 space-y-3 text-sm text-slate-500">
                 <p className="font-heading font-semibold text-xs uppercase" style={{ color: NAVY }}>
                   This course includes:
