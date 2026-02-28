@@ -351,25 +351,58 @@ export default function AdminDashboard() {
   };
 
   const startEdit = (c: Course) => {
-    // Parse content regardless of whether it's a string or object
-    const parsed = parseCourseContent(c.content);
-    const parts = parsed?.parts?.length ? parsed.parts : [mkPart()];
+    try {
+      // Safely parse content — c may have it as string, object, or undefined
+      const rawContent = (c as any).content ?? null;
+      let parts: Part[] = [mkPart()];
+      try {
+        const parsed = parseCourseContent(rawContent);
+        if (parsed?.parts && Array.isArray(parsed.parts) && parsed.parts.length > 0) {
+          // Ensure every part/module/lesson has an id so the form builder works
+          parts = parsed.parts.map((p: any) => ({
+            id:          p.id ?? uid(),
+            title:       p.title ?? "",
+            description: p.description ?? "",
+            modules: Array.isArray(p.modules) ? p.modules.map((m: any) => ({
+              id:          m.id ?? uid(),
+              title:       m.title ?? "",
+              description: m.description ?? "",
+              lessons: Array.isArray(m.lessons) ? m.lessons.map((l: any) => ({
+                id:          l.id ?? uid(),
+                title:       l.title ?? "",
+                description: l.description ?? "",
+                videoUrl:    l.videoUrl ?? l.video_url ?? "",
+                duration:    l.duration ?? "",
+              })) : [mkLesson()],
+            })) : [mkModule()],
+          }));
+        }
+      } catch {
+        parts = [mkPart()];
+      }
 
-    setForm({
-      title:       c.title ?? "",
-      description: c.description ?? "",
-      price:       String(c.price ?? ""),
-      duration:    c.duration ?? "",
-      lessons:     String(c.lessons ?? c.lessons_count ?? ""),
-      catId:       String(c.category_id ?? ""),
-      file:        null,
-      preview:     c.image ?? null,
-      parts,
-    });
-    setEditId(c.id);
-    setViewCourse(null);
-    setTab("add");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+      // Safely read all course fields with fallbacks
+      const title       = String((c as any).title       ?? "");
+      const description = String((c as any).description ?? "");
+      const price       = String((c as any).price       ?? "");
+      const duration    = String((c as any).duration    ?? "");
+      const lessons     = String((c as any).lessons     ?? (c as any).lessons_count ?? "");
+      const catId       = String((c as any).category_id ?? "");
+      const preview     = (c as any).image ?? null;
+
+      // Reset collapsed state so everything shows open in edit mode
+      setColParts({});
+      setColMods({});
+
+      setForm({ title, description, price, duration, lessons, catId, file: null, preview, parts });
+      setEditId(c.id);
+      setViewCourse(null);
+      setTab("add");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      console.error("startEdit error:", err);
+      toast({ title: "Could not open editor. Check console for details.", variant: "destructive" });
+    }
   };
 
   // ── Submit ─────────────────────────────────────────────────────────
@@ -901,9 +934,10 @@ export default function AdminDashboard() {
                     <button type="button" onClick={addPart} className="ab"><Plus size={13} /> Add Part</button>
                   </div>
 
-                  {form.parts.map((part, pi) => {
+                  {(form.parts ?? [mkPart()]).map((part, pi) => {
+                    if (!part || !part.id) return null;
                     const pc = colParts[part.id];
-                    const tl = part.modules.reduce((a, m) => a + m.lessons.length, 0);
+                    const tl = (part.modules ?? []).reduce((a: number, m: Module) => a + (m.lessons ?? []).length, 0);
                     return (
                       <div key={part.id} className="pb">
                         <div className="sh" style={{ background: NAVY + "06", borderBottom: pc ? "none" : "1px solid #e8edf2" }}
@@ -937,7 +971,8 @@ export default function AdminDashboard() {
                               </div>
                             </div>
 
-                            {part.modules.map((mod, mi) => {
+                            {(part.modules ?? []).map((mod, mi) => {
+                              if (!mod || !mod.id) return null;
                               const mk = `${part.id}|${mod.id}`;
                               const mc = colMods[mk];
                               return (
@@ -949,10 +984,10 @@ export default function AdminDashboard() {
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                       <p style={{ fontWeight: 700, fontSize: 12, color: NAVY }}>{mod.title || `Module ${mi + 1}`}</p>
-                                      <p style={{ fontSize: 10, color: "#94a3b8" }}>{mod.lessons.length} lessons</p>
+                                      <p style={{ fontSize: 10, color: "#94a3b8" }}>{(mod.lessons ?? []).length} lessons</p>
                                     </div>
                                     <ChevronDown size={13} style={{ color: "#94a3b8", transform: mc ? "rotate(-90deg)" : "none", transition: "transform .2s", flexShrink: 0 }} />
-                                    {part.modules.length > 1 && (
+                                    {(part.modules ?? []).length > 1 && (
                                       <button type="button" onClick={e => { e.stopPropagation(); remMod(part.id, mod.id); }} className="icn">
                                         <X size={12} style={{ color: "#ef4444" }} />
                                       </button>
@@ -972,8 +1007,9 @@ export default function AdminDashboard() {
                                         </div>
                                       </div>
 
-                                      {mod.lessons.map((lesson, li) => {
-                                        const vid = ytId(lesson.videoUrl);
+                                      {(mod.lessons ?? []).map((lesson, li) => {
+                                        if (!lesson || !lesson.id) return null;
+                                        const vid = ytId(lesson.videoUrl ?? "");
                                         return (
                                           <div key={lesson.id} className="lb">
                                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
@@ -981,7 +1017,7 @@ export default function AdminDashboard() {
                                                 <PlayCircle size={13} style={{ color: GOLD2 }} />
                                                 <span style={{ fontSize: 11, fontWeight: 700, color: NAVY }}>Lesson {li + 1}</span>
                                               </div>
-                                              {mod.lessons.length > 1 && (
+                                              {(mod.lessons ?? []).length > 1 && (
                                                 <button type="button" onClick={() => remLesson(part.id, mod.id, lesson.id)} className="icn"><X size={12} style={{ color: "#ef4444" }} /></button>
                                               )}
                                             </div>
