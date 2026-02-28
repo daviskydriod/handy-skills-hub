@@ -35,6 +35,21 @@ export default function Login() {
       await login(email, password);
       const stored = localStorage.getItem('hg_user');
       const role   = stored ? JSON.parse(stored).role : 'student';
+
+      // ── Block admin from using the regular login page ──────────────
+      if (role === 'admin') {
+        // Log them out immediately so no admin session is created here
+        localStorage.removeItem('hg_token');
+        localStorage.removeItem('hg_user');
+        toast.error(
+          'Admin accounts must sign in via the Admin Portal.',
+          { description: 'Use /admin/login to access your dashboard.', duration: 5000 }
+        );
+        setLoading(false);
+        return;
+      }
+      // ──────────────────────────────────────────────────────────────
+
       toast.success('Welcome back!');
       navigate(from ?? getDefaultPath(role), { replace: true });
     } catch (err: any) {
@@ -124,6 +139,15 @@ export default function Login() {
 
         .lg-trust{display:flex;justify-content:center;gap:14px;margin-top:20px;flex-wrap:wrap}
         .lg-badge{font-size:11px;color:#94a3b8;font-weight:500}
+
+        .lg-admin-note{
+          display:flex;align-items:center;gap:8px;
+          margin-top:16px;padding:10px 14px;border-radius:10px;
+          background:#fefce8;border:1px solid #fde68a;
+          font-size:11.5px;color:#92400e;font-weight:500;
+          text-align:left;
+        }
+        .lg-admin-note a{color:#92400e;font-weight:700;text-decoration:underline}
       `}</style>
 
       <div className="lg-page">
@@ -154,7 +178,7 @@ export default function Login() {
             <div className="lg-field">
               <label className="lg-label">Password</label>
               <div className="lg-rel">
-                <input className={`lg-input pr`}
+                <input className="lg-input pr"
                   type={showPass ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={password} onChange={e => setPassword(e.target.value)}
@@ -180,6 +204,12 @@ export default function Login() {
           <p className="lg-foot">
             Don't have an account? <Link to="/register">Register Free</Link>
           </p>
+
+          {/* Admin redirect notice */}
+          <div className="lg-admin-note">
+            🛡️ Admin?&nbsp;
+            <Link to="/admin/login">Sign in via the Admin Portal →</Link>
+          </div>
 
           <div className="lg-trust">
             <span className="lg-badge">🔒 Secure Login</span>
