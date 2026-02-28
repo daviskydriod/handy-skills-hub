@@ -7,6 +7,9 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
 
+import HandyGidiChat from './components/global/HandyGidiChat';
+
+
 // Pages — public
 import Index        from "./pages/Index";
 import Courses      from "./pages/Courses";
@@ -41,6 +44,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <HandyGidiChat />
         <AuthProvider>
           <Routes>
 
