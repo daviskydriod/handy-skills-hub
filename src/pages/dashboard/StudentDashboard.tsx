@@ -525,7 +525,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                           <p style={{ fontSize: 11, color: "#94a3b8", marginBottom: 12 }}>by {c.instructor}</p>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <span style={{ fontWeight: 800, fontSize: 15, color: c.price === 0 ? "#10b981" : NAVY }}>
-                              {c.price === 0 ? "Free" : `₦${c.price.toLocaleString()}`}
+                             {parseFloat(String(c.price ?? 0)) === 0 ? "Free" : `₦${parseFloat(String(c.price ?? 0)).toLocaleString()}`}
                             </span>
                             <button onClick={() => setPayingCourse(c)} className="btnt" style={{ padding: "7px 16px", fontSize: 11 }}>Enroll</button>
                           </div>
@@ -732,7 +732,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                                   </div>
                                 </div>
                               </td>
-                              <td style={{ fontWeight: 700 }}>₦{p.amount.toLocaleString()}</td>
+                              <td style={{ fontWeight: 700 }}>₦{parseFloat(String(p.amount ?? 0)).toLocaleString()}</td>
                               <td><StatusBadge status={p.status} /></td>
                               <td style={{ color: "#64748b" }}>{new Date(p.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</td>
                               <td style={{ color: "#94a3b8", fontSize: 12 }}>
