@@ -22,6 +22,8 @@ import Register     from "./pages/Register";
 import NotFound     from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AdminRegister from "./pages/AdminRegister";
+import AdminLogin    from "./pages/AdminLogin";
 
 // Pages — course player (full-screen, no DashboardLayout)
 import StudentCoursePlayer from "./pages/StudentCoursePlayer";
@@ -59,6 +61,8 @@ const App = () => (
             <Route path="/register"    element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password"  element={<ResetPassword />} />
+            <Route path="/admin/register" element={<AdminRegister />} />
+            <Route path="/admin/login"    element={<AdminLogin />} />
 
             {/* ── Course Player ───────────────────────────────────
                 Full-screen dark UI — NO DashboardLayout wrapper.
