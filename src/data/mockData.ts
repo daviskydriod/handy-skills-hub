@@ -233,7 +233,7 @@ export const dashboardStats = {
 export const BUSINESS_INFO = {
   name: "HandyGidi Training Centre",
   tagline: "Training Today for Tomorrow's Future",
-  email: "Gidisk2001@gmail.com",
+  email: "info@handygiditrainingcentre.com",
   phone: "07051094001",
   whatsapp: "2347051094001",
   address: "1st Dodo Mall, Suite 7, off Winners Highway, opp. Hossana Estate Phase 3, behind AMAC Market, New FHA, Lugbe, Abuja",
