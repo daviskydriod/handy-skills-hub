@@ -61,6 +61,7 @@ export interface CoursesFilter {
   sort?: "default" | "rating" | "price-asc" | "price-desc";
   page?: number;
   limit?: number;
+  admin?: boolean; // ✅ When true, fetches ALL courses including unpublished
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -80,15 +81,15 @@ function parseCourseContent(raw: unknown): CourseContent | undefined {
 function hydrateCourse(c: any): Course {
   return {
     ...c,
-    // ✅ FIX: Cast numeric fields that PHP may return as strings
     id:            Number(c.id),
     price:         Number(c.price   ?? 0),
     rating:        Number(c.rating  ?? 0),
     lessons:       Number(c.lessons ?? 0),
     enrolled:      Number(c.enrolled ?? 0),
     instructor_id: Number(c.instructor_id ?? 0),
-    is_published:  Boolean(c.is_published),
-    sponsored:     Boolean(c.sponsored),
+    // ✅ FIX: Boolean("0") = true — use Number comparison instead
+    is_published:  Number(c.is_published) === 1,
+    sponsored:     Number(c.sponsored) === 1,
     content:       parseCourseContent(c.content),
   };
 }
@@ -105,6 +106,8 @@ export async function getCourses(
   if (filter.page)     params.page     = filter.page;
   if (filter.limit)    params.limit    = filter.limit;
   if (filter.sort && filter.sort !== "default") params.sort = filter.sort;
+  // ✅ FIX: Pass admin=1 so PHP returns ALL courses including unpublished
+  if (filter.admin)    params.admin    = 1;
 
   const res  = await client.get("/courses", { params });
   const data = res.data ?? {};
