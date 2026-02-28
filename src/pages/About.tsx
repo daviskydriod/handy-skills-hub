@@ -303,50 +303,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          TEAM
-      ══════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container">
-          <div className="text-center mb-12">
-            <SectionLabel>The People Behind It</SectionLabel>
-            <h2 className="font-heading font-extrabold"
-              style={{ fontSize: "clamp(1.7rem,4vw,2.6rem)", color: NAVY }}>
-              Meet Our <span style={{ color: GOLD }}>Team</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {teamMembers.map((m, i) => (
-              <motion.div key={m.name}
-                variants={fadeUp} custom={i}
-                initial="hidden" whileInView="visible" viewport={{ once: true }}
-                className="group bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center"
-              >
-                {/* image strip */}
-                <div className="relative h-32 overflow-hidden"
-                  style={{ background: `linear-gradient(135deg,#060d1c,${NAVY2})` }}>
-                  <div className="absolute inset-0 opacity-[0.06]"
-                    style={{ backgroundImage: `radial-gradient(circle,${GOLD} 1px,transparent 1px)`, backgroundSize: "16px 16px" }} />
-                  <img src={m.avatar} alt={m.name}
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/3 w-20 h-20 rounded-full object-cover border-4 shadow-lg group-hover:scale-105 transition-transform duration-300"
-                    style={{ borderColor: GOLD + "55" }} />
-                </div>
-
-                {/* content */}
-                <div className="pt-12 pb-6 px-4">
-                  <h3 className="font-heading font-extrabold text-sm mb-0.5" style={{ color: NAVY }}>
-                    {m.name}
-                  </h3>
-                  <p className="text-[11px] font-bold mb-2" style={{ color: GOLD2 }}>{m.role}</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">{m.bio}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
+    
       {/* ══════════════════════════════════════════════════════
           CTA
       ══════════════════════════════════════════════════════ */}
