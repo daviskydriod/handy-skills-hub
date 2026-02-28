@@ -305,14 +305,14 @@ export default function AdminDashboard() {
   const resetForm = () => { setForm(makeEmptyForm()); setEditId(null); setColParts({}); setColMods({}); };
 
   // ── Normalize ─────────────────────────────────────────────────────
-  const normalizeCourse = (c: any): Course => ({
-    ...c,
-    is_published: Boolean(c.is_published),
-    enrolled:     c.enrolled     ?? c.enrolled_count     ?? c.enrollments_count ?? 0,
-    lessons:      c.lessons      ?? c.lessons_count      ?? 0,
-    rating:       c.rating       ?? c.average_rating     ?? 0,
-    content:      c.content,
-  });
+const normalizeCourse = (c: any): Course => ({
+  ...c,
+  is_published: Number(c.is_published) === 1,  // ← FIXED
+  enrolled:     c.enrolled     ?? c.enrolled_count     ?? c.enrollments_count ?? 0,
+  lessons:      c.lessons      ?? c.lessons_count      ?? 0,
+  rating:       c.rating       ?? c.average_rating     ?? 0,
+  content:      c.content,
+});
 
   // ── Fetch ─────────────────────────────────────────────────────────
   const loadCourses = useCallback(async () => {
