@@ -21,7 +21,7 @@ const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
 
 const BANK_DETAILS = {
-  bankName:      "Handy Gidi International Ltd",
+  bankName:      "Polaris bank",
   accountNumber: "4091434370 ",
   accountName:   "Handy Gidi International Ltd ",
 };
