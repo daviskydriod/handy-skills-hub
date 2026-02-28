@@ -689,7 +689,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
               </div>
               <div style={{ display: "grid", gap: 12, marginBottom: 20 }} className="g3">
                 {[
-                  { label: "Total Paid", value: `₦${payments.filter(p => p.status === "approved").reduce((a, p) => a + p.amount, 0).toLocaleString()}`, color: "#10b981", bg: "#10b98115" },
+                  { label: "Total Paid", value: `₦${payments.filter(p => p.status === "approved").reduce((a, p) => a + parseFloat(String(p.amount ?? 0)), 0).toLocaleString()}`, color: "#10b981", bg: "#10b98115" },
                   { label: "Pending",    value: pendingPayments.length,                                                                                   color: "#f59e0b", bg: "#f59e0b15" },
                   { label: "Rejected",   value: payments.filter(p => p.status === "rejected").length,                                                     color: "#ef4444", bg: "#ef444415" },
                 ].map(s => (
