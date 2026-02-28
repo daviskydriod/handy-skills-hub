@@ -892,8 +892,12 @@ function CourseThumb({ image, title, size = 44 }: { image?: string | null; title
     </div>
   );
 }
+
+
+const TEAL  = "#0d9488";
+const TEAL2 = "#0f766e";
+
 function ProgressBar({ pct }: { pct: number }) {
-  const TEAL = "#0d9488"; const TEAL2 = "#0f766e";
   return (
     <div style={{ width: "100%", background: "#e2e8f0", borderRadius: 99, height: 6, overflow: "hidden" }}>
       <div style={{ height: "100%", borderRadius: 99, background: `linear-gradient(90deg,${TEAL},${TEAL2})`, width: `${pct}%`, transition: "width .5s ease" }} />
