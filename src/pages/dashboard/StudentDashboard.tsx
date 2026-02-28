@@ -21,10 +21,13 @@ const TEAL2 = "#0f766e";
 const NAVY  = "#0b1f3a";
 
 const BANK_DETAILS = {
-  bankName:      "First Bank Nigeria",
-  accountNumber: "0123456789",
-  accountName:   "HandyGidi Training Centre",
+  bankName:      "Handy Gidi International Ltd",
+  accountNumber: "4091434370 ",
+  accountName:   "Handy Gidi International Ltd ",
 };
+
+
+
 
 type TabType = "overview" | "my-courses" | "explore" | "payments";
 
