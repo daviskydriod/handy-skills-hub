@@ -1,8 +1,12 @@
 // File: src/components/layout/Navbar.tsx
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, GraduationCap, Phone, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
+import {
+  Menu, X, GraduationCap, Phone, LogOut, LayoutDashboard,
+  ChevronDown, Monitor, Brain, Share2, Pen, Globe, Home,
+  Briefcase, Megaphone, Code, FileText, Mail, TrendingUp, Heart, Star,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/logo.jpeg";
 import { BUSINESS_INFO } from "@/data/mockData";
@@ -13,9 +17,25 @@ const NAVY2 = "#0f2d56";
 const GOLD  = "#EAB308";
 const GOLD2 = "#CA8A04";
 
+const courses = [
+  { label: "Computer Appreciation",           icon: Monitor,     to: "/courses/computer-appreciation" },
+  { label: "AI & Data Analysis",              icon: Brain,       to: "/courses/ai-data-analysis" },
+  { label: "Social Media Management",         icon: Share2,      to: "/courses/social-media-management" },
+  { label: "Graphic Design",                  icon: Pen,         to: "/courses/graphic-design" },
+  { label: "Web Design",                      icon: Globe,       to: "/courses/web-design" },
+  { label: "Interior Design",                 icon: Home,        to: "/courses/interior-design" },
+  { label: "Leadership & Management",         icon: Briefcase,   to: "/courses/leadership-management" },
+  { label: "Digital Marketing",               icon: Megaphone,   to: "/courses/digital-marketing" },
+  { label: "Basic Programming (Python)",      icon: Code,        to: "/courses/python-programming" },
+  { label: "Office Productivity",             icon: FileText,    to: "/courses/office-productivity" },
+  { label: "Internet & Email Mastery",        icon: Mail,        to: "/courses/internet-email" },
+  { label: "Business Development Skills",     icon: TrendingUp,  to: "/courses/business-development" },
+  { label: "Women in Business Empowerment",   icon: Heart,       to: "/courses/women-in-business" },
+  { label: "Girl Child Digital Skills",       icon: Star,        to: "/courses/girl-child-digital" },
+];
+
 const navLinks = [
   { label: "Home",    to: "/" },
-  { label: "Courses", to: "/courses" },
   { label: "About",   to: "/about" },
   { label: "Contact", to: "/contact" },
 ];
@@ -27,14 +47,19 @@ const getDashboardPath = (role?: string) => {
 };
 
 export default function Navbar() {
-  const [open,        setOpen]        = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const location   = useLocation();
-  const navigate   = useNavigate();
+  const [open,          setOpen]          = useState(false);
+  const [userMenuOpen,  setUserMenuOpen]  = useState(false);
+  const [coursesOpen,   setCoursesOpen]   = useState(false);
+  const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false);
+  const location  = useLocation();
+  const navigate  = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  const coursesRef = useRef<HTMLDivElement>(null);
 
   const isActive = (to: string) =>
     to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+
+  const isCoursesActive = location.pathname.startsWith("/courses");
 
   const handleLogout = () => {
     logout();
@@ -42,6 +67,17 @@ export default function Navbar() {
     setOpen(false);
     navigate("/");
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (coursesRef.current && !coursesRef.current.contains(e.target as Node)) {
+        setCoursesOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <header
@@ -75,7 +111,133 @@ export default function Navbar() {
 
         {/* Desktop nav links */}
         <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((l) => (
+          {/* Home */}
+          <Link
+            to="/"
+            className="relative px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200"
+            style={{ color: isActive("/") ? GOLD : "rgba(255,255,255,0.7)" }}
+          >
+            {isActive("/") && (
+              <motion.span
+                layoutId="nav-underline"
+                className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full"
+                style={{ background: `linear-gradient(90deg,${GOLD},${GOLD2})` }}
+              />
+            )}
+            Home
+          </Link>
+
+          {/* Courses dropdown trigger */}
+          <div className="relative" ref={coursesRef}>
+            <button
+              onClick={() => setCoursesOpen(!coursesOpen)}
+              onMouseEnter={() => setCoursesOpen(true)}
+              className="relative flex items-center gap-1 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200"
+              style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.7)" }}
+            >
+              {isCoursesActive && (
+                <motion.span
+                  layoutId="nav-underline"
+                  className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full"
+                  style={{ background: `linear-gradient(90deg,${GOLD},${GOLD2})` }}
+                />
+              )}
+              Courses
+              <ChevronDown
+                size={13}
+                className={`transition-transform duration-200 ${coursesOpen ? "rotate-180" : ""}`}
+                style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.5)" }}
+              />
+            </button>
+
+            {/* Mega dropdown */}
+            <AnimatePresence>
+              {coursesOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                  onMouseLeave={() => setCoursesOpen(false)}
+                  className="absolute left-1/2 -translate-x-1/2 mt-1 rounded-2xl shadow-2xl overflow-hidden"
+                  style={{
+                    width: "680px",
+                    background: NAVY2,
+                    border: "1px solid rgba(234,179,8,0.18)",
+                    boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+                  }}
+                >
+                  {/* Header */}
+                  <div className="px-5 py-4 border-b flex items-center justify-between"
+                    style={{ borderColor: "rgba(234,179,8,0.12)", background: "rgba(0,0,0,0.2)" }}>
+                    <div>
+                      <p className="text-sm font-extrabold text-white">Our Courses</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                        {courses.length} programs available · Enroll anytime
+                      </p>
+                    </div>
+                    <Link
+                      to="/courses"
+                      onClick={() => setCoursesOpen(false)}
+                      className="px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105"
+                      style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c" }}
+                    >
+                      View All
+                    </Link>
+                  </div>
+
+                  {/* Grid */}
+                  <div className="p-4 grid grid-cols-2 gap-1">
+                    {courses.map((course) => {
+                      const Icon = course.icon;
+                      return (
+                        <Link
+                          key={course.to}
+                          to={course.to}
+                          onClick={() => setCoursesOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group"
+                          style={{
+                            background: location.pathname === course.to
+                              ? "rgba(234,179,8,0.1)"
+                              : "transparent",
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                          onMouseLeave={e => (e.currentTarget.style.background =
+                            location.pathname === course.to ? "rgba(234,179,8,0.1)" : "transparent")}
+                        >
+                          <div
+                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all"
+                            style={{ background: "rgba(234,179,8,0.12)" }}
+                          >
+                            <Icon size={13} style={{ color: GOLD }} />
+                          </div>
+                          <span
+                            className="text-xs font-semibold leading-snug"
+                            style={{ color: location.pathname === course.to ? GOLD : "rgba(255,255,255,0.78)" }}
+                          >
+                            {course.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  {/* Footer CTA */}
+                  <div className="px-5 py-3 border-t flex items-center gap-3"
+                    style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.15)" }}>
+                    <GraduationCap size={14} style={{ color: GOLD }} />
+                    <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      Can't decide? <Link to="/contact" onClick={() => setCoursesOpen(false)}
+                        className="underline" style={{ color: GOLD }}>Talk to our advisors</Link> for guidance.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Remaining links */}
+          {navLinks.filter(l => l.to !== "/").map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -94,17 +256,15 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop CTA — changes based on auth state */}
+        {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-2">
           {isAuthenticated && user ? (
-            /* ── Logged-in user menu ── */
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all hover:bg-white/10"
                 style={{ border: "1px solid rgba(234,179,8,0.25)" }}
               >
-                {/* Avatar */}
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold"
                   style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c" }}>
                   {user.name?.charAt(0).toUpperCase()}
@@ -116,7 +276,6 @@ export default function Navbar() {
                   className={`transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
               </button>
 
-              {/* Dropdown */}
               <AnimatePresence>
                 {userMenuOpen && (
                   <motion.div
@@ -127,12 +286,10 @@ export default function Navbar() {
                     className="absolute right-0 mt-2 w-48 rounded-2xl overflow-hidden shadow-xl"
                     style={{ background: NAVY2, border: "1px solid rgba(234,179,8,0.15)" }}
                   >
-                    {/* User info */}
                     <div className="px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
                       <p className="text-xs font-bold text-white truncate">{user.name}</p>
                       <p className="text-[11px] capitalize mt-0.5" style={{ color: GOLD }}>{user.role}</p>
                     </div>
-                    {/* Dashboard link */}
                     <Link
                       to={getDashboardPath(user.role)}
                       onClick={() => setUserMenuOpen(false)}
@@ -142,7 +299,6 @@ export default function Navbar() {
                       <LayoutDashboard size={14} style={{ color: GOLD }} />
                       My Dashboard
                     </Link>
-                    {/* Logout */}
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold transition-all hover:bg-red-500/10 border-t"
@@ -156,7 +312,6 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
           ) : (
-            /* ── Guest buttons ── */
             <>
               <Link
                 to="/login"
@@ -206,8 +361,95 @@ export default function Navbar() {
           >
             <div className="container py-5 flex flex-col gap-1">
 
-              {/* Nav links */}
-              {navLinks.map((l) => (
+              {/* Home */}
+              <Link
+                to="/"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold transition-all"
+                style={{
+                  color: isActive("/") ? GOLD : "rgba(255,255,255,0.75)",
+                  background: isActive("/") ? "rgba(234,179,8,0.08)" : "transparent",
+                  borderLeft: isActive("/") ? `3px solid ${GOLD}` : "3px solid transparent",
+                }}
+              >
+                Home
+                {isActive("/") && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: "rgba(234,179,8,0.15)", color: GOLD }}>Active</span>
+                )}
+              </Link>
+
+              {/* Mobile Courses accordion */}
+              <div>
+                <button
+                  onClick={() => setMobileCoursesOpen(!mobileCoursesOpen)}
+                  className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold transition-all"
+                  style={{
+                    color: isCoursesActive ? GOLD : "rgba(255,255,255,0.75)",
+                    background: isCoursesActive ? "rgba(234,179,8,0.08)" : "transparent",
+                    borderLeft: isCoursesActive ? `3px solid ${GOLD}` : "3px solid transparent",
+                  }}
+                >
+                  <span>Courses</span>
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${mobileCoursesOpen ? "rotate-180" : ""}`}
+                    style={{ color: isCoursesActive ? GOLD : "rgba(255,255,255,0.4)" }}
+                  />
+                </button>
+
+                <AnimatePresence>
+                  {mobileCoursesOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden ml-3 mt-1"
+                    >
+                      <div
+                        className="rounded-xl overflow-hidden"
+                        style={{ border: "1px solid rgba(234,179,8,0.12)", background: "rgba(255,255,255,0.03)" }}
+                      >
+                        <Link
+                          to="/courses"
+                          onClick={() => { setOpen(false); setMobileCoursesOpen(false); }}
+                          className="flex items-center gap-2 px-3 py-2.5 border-b text-xs font-bold"
+                          style={{ color: GOLD, borderColor: "rgba(234,179,8,0.12)" }}
+                        >
+                          <GraduationCap size={12} />
+                          Browse All Courses →
+                        </Link>
+                        {courses.map((course) => {
+                          const Icon = course.icon;
+                          return (
+                            <Link
+                              key={course.to}
+                              to={course.to}
+                              onClick={() => { setOpen(false); setMobileCoursesOpen(false); }}
+                              className="flex items-center gap-2.5 px-3 py-2.5 border-b last:border-0 transition-all"
+                              style={{
+                                borderColor: "rgba(255,255,255,0.04)",
+                                color: location.pathname === course.to ? GOLD : "rgba(255,255,255,0.7)",
+                                background: location.pathname === course.to ? "rgba(234,179,8,0.07)" : "transparent",
+                              }}
+                            >
+                              <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                                style={{ background: "rgba(234,179,8,0.1)" }}>
+                                <Icon size={11} style={{ color: GOLD }} />
+                              </div>
+                              <span className="text-xs font-semibold">{course.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* About & Contact */}
+              {navLinks.filter(l => l.to !== "/").map((l) => (
                 <Link
                   key={l.to}
                   to={l.to}
@@ -222,9 +464,7 @@ export default function Navbar() {
                   {l.label}
                   {isActive(l.to) && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: "rgba(234,179,8,0.15)", color: GOLD }}>
-                      Active
-                    </span>
+                      style={{ background: "rgba(234,179,8,0.15)", color: GOLD }}>Active</span>
                   )}
                 </Link>
               ))}
@@ -232,9 +472,7 @@ export default function Navbar() {
               <div className="my-2 border-t" style={{ borderColor: "rgba(255,255,255,0.08)" }} />
 
               {isAuthenticated && user ? (
-                /* ── Mobile logged-in ── */
                 <>
-                  {/* User info */}
                   <div className="flex items-center gap-3 px-3 py-2 mb-1">
                     <div className="w-9 h-9 rounded-full flex items-center justify-center font-extrabold text-sm shrink-0"
                       style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c" }}>
@@ -245,7 +483,6 @@ export default function Navbar() {
                       <p className="text-[11px] capitalize" style={{ color: GOLD }}>{user.role}</p>
                     </div>
                   </div>
-                  {/* Dashboard */}
                   <Link
                     to={getDashboardPath(user.role)}
                     onClick={() => setOpen(false)}
@@ -255,7 +492,6 @@ export default function Navbar() {
                     <LayoutDashboard size={15} style={{ color: GOLD }} />
                     My Dashboard
                   </Link>
-                  {/* Logout */}
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-2.5 px-3 py-3 rounded-xl text-sm font-semibold transition-all w-full mt-1"
@@ -266,7 +502,6 @@ export default function Navbar() {
                   </button>
                 </>
               ) : (
-                /* ── Mobile guest buttons ── */
                 <div className="flex gap-3">
                   <Link
                     to="/login"
