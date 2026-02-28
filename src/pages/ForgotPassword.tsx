@@ -3,15 +3,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.jpeg';
-import axios from 'axios';
+import { forgotPassword } from '@/api/auth';
 
 const NAVY  = '#0b1f3a';
 const NAVY2 = '#0f2d56';
 const GOLD  = '#EAB308';
 const GOLD2 = '#CA8A04';
-
-// Your cPanel API base — change if your PHP files are in a different path
-const API = 'https://api.handygiditrainingcentre.com';
 
 export default function ForgotPassword() {
   const [email,   setEmail]   = useState('');
@@ -25,7 +22,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      await axios.post(`${API}/forgot-password.php`, { email });
+      await forgotPassword(email);
       setSent(true);
     } catch (err: any) {
       toast.error(err.response?.data?.error ?? 'Something went wrong. Please try again.');
