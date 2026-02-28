@@ -5,7 +5,7 @@ import {
   BookOpen, Search, CheckCircle, TrendingUp, BarChart2,
   RefreshCw, Play, Clock, Users, Star, CreditCard, Upload,
   X, AlertCircle, Copy, Check, LayoutDashboard, Compass,
-  Bell, LogOut, DollarSign, FileText,
+  Bell, LogOut, DollarSign, FileText, Menu,
   ChevronRight, MessageSquare,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -128,10 +128,8 @@ const PaymentModal = ({ course, onClose, onSubmitted }: {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 0 }}
       onClick={onClose}>
-      {/* Bottom sheet on mobile, centered modal on desktop */}
       <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", padding: "8px 0 0", maxWidth: 480, width: "100%", maxHeight: "92vh", overflowY: "auto", animation: "slideUp .25s ease" }}
         onClick={e => e.stopPropagation()}>
-        {/* Drag handle */}
         <div style={{ width: 40, height: 4, background: "#e2e8f0", borderRadius: 99, margin: "0 auto 20px" }} />
         <div style={{ padding: "0 24px 32px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
@@ -236,19 +234,19 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   const navigate  = useNavigate();
   const location  = useLocation();
 
-  const [mobile,       setMobile]       = useState(isMobile());
-  const [tab,          setTab]          = useState<TabType>(defaultTab);
-  const [enrolled,     setEnrolled]     = useState<EnrolledCourse[]>([]);
-  const [explore,      setExplore]      = useState<Course[]>([]);
-  const [payments,     setPayments]     = useState<Payment[]>([]);
-  const [loadingE,     setLE]           = useState(true);
-  const [loadingX,     setLX]           = useState(false);
-  const [loadingP,     setLP]           = useState(false);
-  const [search,       setSearch]       = useState("");
-  const [payingCourse, setPayingCourse] = useState<Course | null>(null);
-  const [reviewCourse, setReviewCourse] = useState<EnrolledCourse | null>(null);
+  const [mobile,          setMobile]          = useState(isMobile());
+  const [tab,             setTab]             = useState<TabType>(defaultTab);
+  const [enrolled,        setEnrolled]        = useState<EnrolledCourse[]>([]);
+  const [explore,         setExplore]         = useState<Course[]>([]);
+  const [payments,        setPayments]        = useState<Payment[]>([]);
+  const [loadingE,        setLE]              = useState(true);
+  const [loadingX,        setLX]              = useState(false);
+  const [loadingP,        setLP]              = useState(false);
+  const [search,          setSearch]          = useState("");
+  const [payingCourse,    setPayingCourse]    = useState<Course | null>(null);
+  const [reviewCourse,    setReviewCourse]    = useState<EnrolledCourse | null>(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  // Track screen size
   useEffect(() => {
     const onResize = () => setMobile(window.innerWidth <= 768);
     window.addEventListener("resize", onResize);
@@ -307,16 +305,14 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
   );
 
   const navItems: { key: TabType; label: string; icon: any; badge?: number }[] = [
-    { key: "overview",   label: "Home",      icon: LayoutDashboard },
-    { key: "my-courses", label: "My Courses", icon: BookOpen },
-    { key: "explore",    label: "Explore",   icon: Compass },
-    { key: "payments",   label: "Payments",  icon: DollarSign, badge: pendingPayments.length },
+    { key: "overview",   label: "Home",       icon: LayoutDashboard },
+    { key: "my-courses", label: "My Courses",  icon: BookOpen },
+    { key: "explore",    label: "Explore",    icon: Compass },
+    { key: "payments",   label: "Payments",   icon: DollarSign, badge: pendingPayments.length },
   ];
 
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-
   return (
-    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: mobile ? "#f6f8fb" : "#f6f8fb", display: "flex", flexDirection: "column" }}>
+    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#f6f8fb", display: "flex", flexDirection: "column" }}>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
         .card{background:#fff;border-radius:16px;border:1px solid #e8edf2;}
@@ -332,21 +328,17 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
         .ccard{background:#fff;border-radius:16px;border:1px solid #e8edf2;transition:all .25s;overflow:hidden;}
         .ccard:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08);}
         .ccard:active{transform:scale(.98);}
-        /* Bottom nav */
         .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8edf2;display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom);}
         .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;border:none;background:none;cursor:pointer;font-family:inherit;position:relative;transition:all .15s;}
         .bnav-item:active{transform:scale(.9);}
-        /* Desktop sidebar */
         .sidebar{background:#fff;border-right:1px solid #e8edf2;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:40;width:240px;flex-shrink:0;}
         .nib{width:100%;display:flex;align-items:center;padding:11px 16px;gap:10px;border:none;border-radius:12px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .18s;}
         @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg);}}
-        .ptable{width:100%;border-collapse:collapse;}
-        .ptable th{text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;border-bottom:2px solid #f1f5f9;}
-        .ptable td{padding:12px 14px;border-bottom:1px solid #f8fafc;font-size:13px;color:${NAVY};}
-        .ptable tr:last-child td{border-bottom:none;}
         .inp{width:100%;padding:12px 16px 12px 44px;border-radius:14px;border:1.5px solid #e2e8f0;background:#fff;font-size:14px;outline:none;font-family:inherit;color:${NAVY};transition:border-color .2s;}
         .inp:focus{border-color:${TEAL};}
+        .menu-dropdown{animation:fadeIn .15s ease;}
       `}</style>
 
       {payingCourse && (
@@ -391,7 +383,7 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
             <header style={{ background: "#fff", borderBottom: "1px solid #e8edf2", position: "sticky", top: 0, zIndex: 30, height: 56, display: "flex", alignItems: "center", padding: "0 24px", gap: 14 }}>
               <div style={{ flex: 1 }}>
                 <h1 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: NAVY }}>
-                  {tab === "overview" ? `Welcome back, ${user?.name?.split(" ")[0] ?? "Student"} 👋`
+                  {tab === "overview"   ? `Welcome back, ${user?.name?.split(" ")[0] ?? "Student"} 👋`
                    : tab === "my-courses" ? "My Courses"
                    : tab === "explore"    ? "Explore Courses"
                    :                        "My Payments"}
@@ -411,15 +403,111 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
       ) : (
         /* ══ MOBILE LAYOUT ══ */
         <div style={{ flex: 1, display: "flex", flexDirection: "column", paddingBottom: 70 }}>
-          {/* Mobile Header */}
-import {
-  BookOpen, Search, CheckCircle, TrendingUp, BarChart2,
-  RefreshCw, Play, Clock, Users, Star, CreditCard, Upload,
-  X, AlertCircle, Copy, Check, LayoutDashboard, Compass,
-  Bell, LogOut, DollarSign, FileText, Menu,
-  ChevronRight, MessageSquare,
-} from "lucide-react";
-      
+
+          {/* ── Mobile Header ── */}
+          <header style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", position: "sticky", top: 0, zIndex: 30, padding: "14px 16px 12px", display: "flex", alignItems: "center", gap: 12 }}>
+
+            {/* Avatar — display only */}
+            <UserAvatar name={user?.name} size={36} />
+
+            {/* Title */}
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>
+                {tab === "overview" ? "Good day 👋" : tab === "my-courses" ? "My Courses" : tab === "explore" ? "Explore" : "Payments"}
+              </p>
+              <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: NAVY, lineHeight: 1.2 }}>
+                {tab === "overview"
+                  ? (user?.name?.split(" ")[0] ?? "Student")
+                  : tab === "my-courses" ? `${total} enrolled`
+                  : tab === "explore"    ? `${filteredExplore.length} courses`
+                  : `${payments.length} records`}
+              </p>
+            </div>
+
+            {/* Refresh */}
+            <button
+              onClick={() => { fetchEnrolled(); fetchExplore(); fetchPayments(); }}
+              style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
+              <RefreshCw size={14} />
+            </button>
+
+            {/* Hamburger menu */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowProfileMenu(o => !o)}
+                style={{
+                  background: showProfileMenu ? TEAL + "15" : "#f1f5f9",
+                  border: "none", borderRadius: "50%", width: 36, height: 36,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: showProfileMenu ? TEAL : "#64748b",
+                  position: "relative", transition: "all .2s",
+                }}>
+                <Menu size={18} />
+                {pendingPayments.length > 0 && (
+                  <span style={{ position: "absolute", top: 5, right: 5, width: 8, height: 8, borderRadius: "50%", background: "#f97316", border: "2px solid #fff" }} />
+                )}
+              </button>
+
+              {showProfileMenu && (
+                <>
+                  {/* Backdrop */}
+                  <div onClick={() => setShowProfileMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 90 }} />
+
+                  {/* Dropdown */}
+                  <div className="menu-dropdown" style={{
+                    position: "absolute", top: 44, right: 0, zIndex: 100,
+                    background: "#fff", borderRadius: 16, border: "1px solid #e8edf2",
+                    boxShadow: "0 8px 32px rgba(0,0,0,.13)", minWidth: 210, padding: 8,
+                  }}>
+                    {/* User info */}
+                    <div style={{ padding: "10px 12px 12px", borderBottom: "1px solid #f1f5f9", marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}>
+                      <UserAvatar name={user?.name} size={34} />
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</p>
+                        <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(user as any)?.email}</p>
+                      </div>
+                    </div>
+
+                    {/* Nav links */}
+                    {navItems.map(({ key, label, icon: Icon, badge }) => (
+                      <button
+                        key={key}
+                        onClick={() => { setTab(key as TabType); setShowProfileMenu(false); }}
+                        style={{
+                          width: "100%", display: "flex", alignItems: "center", gap: 10,
+                          padding: "10px 12px", border: "none", borderRadius: 10, cursor: "pointer",
+                          fontFamily: "inherit", fontSize: 13, fontWeight: 600, transition: "all .15s",
+                          background: tab === key ? TEAL + "12" : "transparent",
+                          color: tab === key ? TEAL : "#475569",
+                        }}>
+                        <Icon size={15} style={{ flexShrink: 0 }} />
+                        <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
+                        {badge != null && badge > 0 && (
+                          <span style={{ background: "#f97316", color: "#fff", fontSize: 9, fontWeight: 800, padding: "1px 6px", borderRadius: 99 }}>{badge}</span>
+                        )}
+                      </button>
+                    ))}
+
+                    {/* Sign out */}
+                    <div style={{ borderTop: "1px solid #f1f5f9", marginTop: 6, paddingTop: 6 }}>
+                      <button
+                        onClick={() => { logout(); navigate("/"); }}
+                        style={{
+                          width: "100%", display: "flex", alignItems: "center", gap: 10,
+                          padding: "10px 12px", border: "none", borderRadius: 10, cursor: "pointer",
+                          fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                          background: "transparent", color: "#ef4444", transition: "all .15s",
+                        }}>
+                        <LogOut size={15} style={{ flexShrink: 0 }} />
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </header>
+
           {/* Mobile Main */}
           <main style={{ flex: 1, padding: "16px 16px 8px" }}>
             <DashboardContent {...{ tab, setTab, mobile, enrolled, explore, payments, loadingE, loadingX, loadingP, search, setSearch, filteredExplore, enrolledIds, pendingPayments, total, completed, inProgress, avgProgress, user, navigate, setPayingCourse, setReviewCourse, fetchEnrolled, fetchExplore, fetchPayments }} />
@@ -430,10 +518,7 @@ import {
             {navItems.map(({ key, label, icon: Icon, badge }) => (
               <button key={key} className="bnav-item" onClick={() => setTab(key as TabType)}>
                 <div style={{ position: "relative" }}>
-                  <div style={{
-                    width: 44, height: 28, borderRadius: 99, display: "flex", alignItems: "center", justifyContent: "center",
-                    background: tab === key ? TEAL + "18" : "transparent", transition: "all .2s",
-                  }}>
+                  <div style={{ width: 44, height: 28, borderRadius: 99, display: "flex", alignItems: "center", justifyContent: "center", background: tab === key ? TEAL + "18" : "transparent", transition: "all .2s" }}>
                     <Icon size={20} style={{ color: tab === key ? TEAL : "#94a3b8", transition: "color .2s" }} />
                   </div>
                   {badge != null && badge > 0 && (
@@ -450,7 +535,7 @@ import {
   );
 }
 
-// ── Shared content extracted to avoid duplication ─────────────────────
+// ── Shared content ────────────────────────────────────────────────────
 function DashboardContent({
   tab, setTab, mobile, enrolled, explore, payments,
   loadingE, loadingX, loadingP, search, setSearch,
@@ -459,20 +544,17 @@ function DashboardContent({
   user, navigate, setPayingCourse, setReviewCourse,
   fetchEnrolled, fetchExplore, fetchPayments,
 }: any) {
-
   return (
     <>
       {/* ════ OVERVIEW ════ */}
       {tab === "overview" && (
         <div style={{ display: "flex", flexDirection: "column", gap: mobile ? 16 : 20 }}>
-
-          {/* Stats grid */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
             {[
-              { label: "Enrolled",    value: loadingE ? "—" : total,             icon: BookOpen,    color: TEAL,      bg: TEAL + "15"   },
-              { label: "Completed",   value: loadingE ? "—" : completed,         icon: CheckCircle, color: "#10b981", bg: "#10b98115"   },
-              { label: "In Progress", value: loadingE ? "—" : inProgress,        icon: TrendingUp,  color: "#3b82f6", bg: "#3b82f615"   },
-              { label: "Avg Progress",value: loadingE ? "—" : `${avgProgress}%`, icon: BarChart2,   color: "#8b5cf6", bg: "#8b5cf615"   },
+              { label: "Enrolled",     value: loadingE ? "—" : total,             icon: BookOpen,    color: TEAL,      bg: TEAL + "15"  },
+              { label: "Completed",    value: loadingE ? "—" : completed,         icon: CheckCircle, color: "#10b981", bg: "#10b98115"  },
+              { label: "In Progress",  value: loadingE ? "—" : inProgress,        icon: TrendingUp,  color: "#3b82f6", bg: "#3b82f615"  },
+              { label: "Avg Progress", value: loadingE ? "—" : `${avgProgress}%`, icon: BarChart2,   color: "#8b5cf6", bg: "#8b5cf615"  },
             ].map(({ label, value, icon: Icon, color, bg }) => (
               <div key={label} className="card" style={{ padding: mobile ? "14px 12px" : 16, display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: mobile ? 36 : 40, height: mobile ? 36 : 40, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -486,7 +568,6 @@ function DashboardContent({
             ))}
           </div>
 
-          {/* Pending payment alert */}
           {pendingPayments.length > 0 && (
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "flex-start", gap: 10 }}>
               <AlertCircle size={16} style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }} />
@@ -502,7 +583,6 @@ function DashboardContent({
             </div>
           )}
 
-          {/* Continue learning */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 15, color: NAVY }}>Continue Learning</h2>
@@ -511,9 +591,7 @@ function DashboardContent({
               </button>
             </div>
             {loadingE ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {[1, 2].map(i => <SkeletonCard key={i} />)}
-              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{[1, 2].map(i => <SkeletonCard key={i} />)}</div>
             ) : enrolled.filter((c: EnrolledCourse) => !c.completed).length === 0 ? (
               <div className="card" style={{ padding: "36px 20px", textAlign: "center" }}>
                 <BookOpen size={28} style={{ color: "#cbd5e1", margin: "0 auto 10px" }} />
@@ -521,7 +599,6 @@ function DashboardContent({
                 <button onClick={() => setTab("explore")} className="btnt" style={{ padding: "10px 20px", fontSize: 13 }}>Browse Courses</button>
               </div>
             ) : mobile ? (
-              /* Mobile: vertical list cards */
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {enrolled.filter((c: EnrolledCourse) => !c.completed).slice(0, 3).map((c: EnrolledCourse) => (
                   <div key={c.id} className="ccard" style={{ cursor: "pointer", padding: 14 }} onClick={() => navigate(`/learn/${c.id}`)}>
@@ -543,7 +620,6 @@ function DashboardContent({
                 ))}
               </div>
             ) : (
-              /* Desktop: horizontal grid */
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 14 }}>
                 {enrolled.filter((c: EnrolledCourse) => !c.completed).slice(0, 3).map((c: EnrolledCourse) => (
                   <div key={c.id} className="ccard" style={{ cursor: "pointer", padding: 16 }} onClick={() => navigate(`/learn/${c.id}`)}>
@@ -565,7 +641,6 @@ function DashboardContent({
             )}
           </div>
 
-          {/* Suggested */}
           {explore.filter((c: Course) => !enrolledIds.has(c.id)).length > 0 && (
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -575,7 +650,6 @@ function DashboardContent({
                 </button>
               </div>
               {mobile ? (
-                /* Mobile: horizontal scroll */
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
                   {explore.filter((c: Course) => !enrolledIds.has(c.id)).slice(0, 6).map((c: Course) => (
                     <div key={c.id} className="ccard" style={{ minWidth: 200, flexShrink: 0 }}>
@@ -754,9 +828,9 @@ function DashboardContent({
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
             {[
-              { label: "Total Paid", value: `₦${payments.filter((p: Payment) => p.status === "approved").reduce((a: number, p: Payment) => a + parseFloat(String(p.amount ?? 0)), 0).toLocaleString()}`, color: "#10b981", bg: "#10b98115" },
-              { label: "Pending",    value: pendingPayments.length,                                                    color: "#f59e0b", bg: "#f59e0b15" },
-              { label: "Rejected",   value: payments.filter((p: Payment) => p.status === "rejected").length,          color: "#ef4444", bg: "#ef444415" },
+              { label: "Total Paid", value: `₦${payments.filter((p: Payment) => p.status === "approved").reduce((a: number, p: Payment) => a + parseFloat(String(p.amount ?? 0)), 0).toLocaleString()}`, color: "#10b981" },
+              { label: "Pending",   value: pendingPayments.length,                                                   color: "#f59e0b" },
+              { label: "Rejected",  value: payments.filter((p: Payment) => p.status === "rejected").length,         color: "#ef4444" },
             ].map(s => (
               <div key={s.label} className="card" style={{ padding: mobile ? "12px 10px" : 16, textAlign: "center" }}>
                 <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: mobile ? 18 : 20, color: s.color }}>{loadingP ? "—" : s.value}</p>
@@ -764,8 +838,6 @@ function DashboardContent({
               </div>
             ))}
           </div>
-
-          {/* Mobile: card list. Desktop: table */}
           <div className="card" style={{ overflow: "hidden" }}>
             {loadingP ? [1, 2, 3].map(i => <SkeletonRow key={i} />) :
               payments.length === 0 ? (
@@ -775,7 +847,6 @@ function DashboardContent({
                   <button onClick={() => setTab("explore")} className="btnt" style={{ padding: "10px 24px", fontSize: 13 }}>Browse Courses</button>
                 </div>
               ) : mobile ? (
-                /* Mobile payment cards */
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {payments.map((p: Payment) => (
                     <div key={p.id} style={{ display: "flex", gap: 12, padding: "14px 16px", borderBottom: "1px solid #f8fafc", alignItems: "flex-start" }}>
@@ -797,7 +868,6 @@ function DashboardContent({
                   ))}
                 </div>
               ) : (
-                /* Desktop table */
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
@@ -825,7 +895,8 @@ function DashboardContent({
                           <td style={{ padding: "12px 14px", borderBottom: "1px solid #f8fafc", fontSize: 12, color: "#94a3b8" }}>
                             {p.status === "rejected" && (p as any).rejection_reason
                               ? <span style={{ color: "#ef4444" }}>{(p as any).rejection_reason}</span>
-                              : p.status === "approved" ? <span style={{ color: "#10b981" }}>Enrolled ✓</span>
+                              : p.status === "approved"
+                              ? <span style={{ color: "#10b981" }}>Enrolled ✓</span>
                               : <span>Awaiting review</span>}
                           </td>
                         </tr>
