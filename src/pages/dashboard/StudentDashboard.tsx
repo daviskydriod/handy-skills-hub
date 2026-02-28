@@ -850,4 +850,3 @@ function DashboardContent({
     </>
   );
 }
-}
