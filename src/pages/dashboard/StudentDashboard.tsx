@@ -855,6 +855,10 @@ function DashboardContent({
   );
 }
 
+
+const TEAL  = "#0d9488";
+const TEAL2 = "#0f766e";
+
 // Re-export small components used inside DashboardContent
 function SkeletonCard() {
   return (
@@ -880,8 +884,8 @@ function SkeletonRow() {
     </div>
   );
 }
+
 function CourseThumb({ image, title, size = 44 }: { image?: string | null; title?: string; size?: number }) {
-  const TEAL = "#0d9488";
   const cols = [TEAL, "#0891b2", "#7c3aed", "#db2777", "#d97706", "#16a34a"];
   const col  = cols[(title?.charCodeAt(0) ?? 0) % cols.length];
   return image ? (
@@ -892,10 +896,6 @@ function CourseThumb({ image, title, size = 44 }: { image?: string | null; title
     </div>
   );
 }
-
-
-const TEAL  = "#0d9488";
-const TEAL2 = "#0f766e";
 
 function ProgressBar({ pct }: { pct: number }) {
   return (
