@@ -205,17 +205,7 @@ export default function Login() {
             Don't have an account? <Link to="/register">Register Free</Link>
           </p>
 
-          {/* Admin redirect notice */}
-          <div className="lg-admin-note">
-            🛡️ Admin?&nbsp;
-            <Link to="/admin/login">Sign in via the Admin Portal →</Link>
-          </div>
-
-          <div className="lg-trust">
-            <span className="lg-badge">🔒 Secure Login</span>
-            <span className="lg-badge">⭐ 500+ Graduates</span>
-            <span className="lg-badge">📍 Lugbe, Abuja</span>
-          </div>
+      
 
         </div>
       </div>
