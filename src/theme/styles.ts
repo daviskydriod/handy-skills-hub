@@ -72,15 +72,19 @@ export const globalStyles = `
     transition:
       background 150ms ease,
       color      150ms ease,
+      padding-left 150ms ease,
       box-shadow 150ms ease;
     white-space: nowrap;
     overflow: hidden;
   }
   .side-nib:hover {
-    background: #f1f5f9 !important;
-    color: ${NAVY} !important;
+    background: rgba(255,255,255,0.08) !important;
+    color: rgba(255,255,255,0.92) !important;
   }
-  /* Active state is applied via inline style (gradient) in Sidebar.tsx */
+  /* Don't override the active gold gradient on hover */
+  .side-nib[style*="linear-gradient"]:hover {
+    opacity: 0.92;
+  }
 
   /* ═══════════════════════════════════════════════════════════
      MOBILE BOTTOM NAV
