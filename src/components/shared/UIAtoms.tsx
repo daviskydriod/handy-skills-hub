@@ -19,11 +19,56 @@ export const Avatar = ({
 );
 
 // ── CourseThumb ────────────────────────────────────────────────────────
+// Default mode: fixed square thumbnail (use size prop)
+// Banner mode:  fills parent container edge-to-edge (pass banner prop)
+//               Parent must have position:relative + overflow:hidden + a height set
 export const CourseThumb = ({
-  image, title, size = 44,
-}: { image?: string | null; title?: string; size?: number }) => {
+  image, title, size = 44, banner = false,
+}: { image?: string | null; title?: string; size?: number; banner?: boolean }) => {
   const cols = [NAVY, "#0891b2", "#7c3aed", "#db2777", "#d97706", "#16a34a"];
   const col  = cols[(title?.charCodeAt(0) ?? 0) % cols.length];
+
+  // ── BANNER mode — fills the parent container completely ──────────────
+  if (banner) {
+    return image ? (
+      <img
+        src={image}
+        alt={title}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center",
+          display: "block",
+        }}
+      />
+    ) : (
+      // Fallback: gradient banner with centered icon when no image
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: `linear-gradient(135deg, ${col}22, ${col}44)`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+      }}>
+        <BookOpen size={28} style={{ color: col, opacity: 0.7 }} />
+        <span style={{
+          fontSize: 11, fontWeight: 600, color: col,
+          opacity: 0.6, maxWidth: "80%", textAlign: "center",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {title}
+        </span>
+      </div>
+    );
+  }
+
+  // ── DEFAULT mode — fixed square icon thumbnail ───────────────────────
   return image ? (
     <img src={image} alt={title} style={{
       width: size, height: size, borderRadius: 10, objectFit: "cover", flexShrink: 0,
