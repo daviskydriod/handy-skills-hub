@@ -228,7 +228,7 @@ export default function InstructorDashboard() {
                     <CourseThumb title={c.title} image={c.image} size={46} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }}>{c.title}</p>
-                      <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.enrolled} students · ₦{parseFloat(String(c.price ?? 0)).toLocaleString()}</p>
+                      <p style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>by {c.instructor || "you"} · {c.enrolled} students · ₦{parseFloat(String(c.price ?? 0)).toLocaleString()}</p>
                     </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -266,7 +266,7 @@ export default function InstructorDashboard() {
                   <CourseThumb title={c.title} image={c.image} size={46} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                    <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.category || "—"} · {c.enrolled} students · ₦{parseFloat(String(c.price ?? 0)).toLocaleString()}</p>
+                    <p style={{ fontSize: 11, color: "#94a3b8" }}>by {c.instructor || "you"} · {c.category || "—"} · {c.enrolled} students · ₦{parseFloat(String(c.price ?? 0)).toLocaleString()}</p>
                   </div>
                   <CourseStatusBadge published={!!c.is_published} />
                   <div style={{ display: "flex", gap: 4 }}>
