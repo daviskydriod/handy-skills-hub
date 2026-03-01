@@ -75,6 +75,10 @@ const normalizeCourse = (c: any): Course => ({
   lessons:      c.lessons      ?? c.lessons_count      ?? 0,
   rating:       c.rating       ?? c.average_rating     ?? 0,
   content:      c.content,
+  // Resolve creator name from whichever field the API returns
+  instructor:   c.instructor   ?? c.instructor_name    ?? c.creator_name
+                ?? c.created_by_name ?? c.user_name    ?? c.author
+                ?? c.user?.name ?? null,
 });
 
 // Payment status badge (separate from generic StatusBadge for consistency)
@@ -392,7 +396,7 @@ export default function AdminDashboard() {
                     <CourseThumb title={c.title} image={c.image} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                      <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.category || "—"} · {fmt(c.price ?? 0)}</p>
+                      <p style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>by {c.instructor || "—"} · {c.category || "—"} · {fmt(c.price ?? 0)}</p>
                     </div>
                     <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                       <button onClick={() => { setViewCourse(c); setTab("courses"); }} className="btn-icon"><Eye size={14} style={{ color: "#3b82f6" }} /></button>
@@ -442,7 +446,7 @@ export default function AdminDashboard() {
                       <CourseThumb title={c.title} image={c.image} size={40} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontWeight: 700, fontSize: 12, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                        <p style={{ fontSize: 10, color: "#94a3b8" }}>{c.enrolled ?? 0} students</p>
+                        <p style={{ fontSize: 10, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>by {c.instructor || "—"} · {c.enrolled ?? 0} students</p>
                       </div>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -488,7 +492,7 @@ export default function AdminDashboard() {
                   <CourseThumb title={c.title} image={c.image} size={46} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontWeight: 700, fontSize: 13, color: NAVY, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</p>
-                    <p style={{ fontSize: 11, color: "#94a3b8" }}>{c.category || "—"} · {c.enrolled ?? 0} students · {fmt(c.price ?? 0)}</p>
+                    <p style={{ fontSize: 11, color: "#94a3b8" }}>by {c.instructor || "—"} · {c.category || "—"} · {c.enrolled ?? 0} students · {fmt(c.price ?? 0)}</p>
                   </div>
                   <CourseStatusBadge published={!!c.is_published} />
                   <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
@@ -517,7 +521,12 @@ export default function AdminDashboard() {
                 <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
                   <CourseThumb title={viewCourse.title} image={viewCourse.image} size={72} />
                   <div style={{ flex: 1 }}>
-                    <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 17, color: NAVY, marginBottom: 8, lineHeight: 1.3 }}>{viewCourse.title}</h2>
+                    <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 17, color: NAVY, marginBottom: 6, lineHeight: 1.3 }}>{viewCourse.title}</h2>
+                    {viewCourse.instructor && (
+                      <p style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 8 }}>
+                        by <span style={{ color: NAVY }}>{viewCourse.instructor}</span>
+                      </p>
+                    )}
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <CourseStatusBadge published={!!viewCourse.is_published} />
                       {viewCourse.category && <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 99, background: NAVY + "0e", color: NAVY, fontWeight: 700, border: `1px solid ${NAVY}18` }}>{viewCourse.category}</span>}
