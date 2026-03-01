@@ -257,8 +257,8 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                   <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
                     {explore.filter(c => !enrolledIds.has(c.id)).slice(0, 6).map(c => (
                       <div key={c.id} className="dash-card" style={{ minWidth: 200, flexShrink: 0 }}>
-                        <div style={{ height: 100, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-                          <CourseThumb title={c.title} image={c.image} size={48} />
+                        <div style={{ height: 100, background: "#f1f5f9", position: "relative", overflow: "hidden" }}>
+                          <CourseThumb title={c.title} image={c.image} banner />
                           <span style={{ position: "absolute", top: 8, left: 8, fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 99, background: GOLD, color: NAVY }}>{c.category}</span>
                         </div>
                         <div style={{ padding: 12 }}>
@@ -278,8 +278,8 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
                     {explore.filter(c => !enrolledIds.has(c.id)).slice(0, 3).map(c => (
                       <div key={c.id} className="dash-card">
-                        <div style={{ height: 110, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-                          <CourseThumb title={c.title} image={c.image} size={56} />
+                        <div style={{ height: 110, background: "#f1f5f9", position: "relative", overflow: "hidden" }}>
+                          <CourseThumb title={c.title} image={c.image} banner />
                           <span style={{ position: "absolute", top: 10, left: 10, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: GOLD, color: NAVY }}>{c.category}</span>
                         </div>
                         <div style={{ padding: 14 }}>
@@ -399,8 +399,8 @@ export default function StudentDashboard({ defaultTab = "overview" }: Props) {
                   const hasPending = payments.some(p => p.course_id === c.id && p.status === "pending");
                   return (
                     <div key={c.id} className="dash-card" style={{ overflow: "hidden" }}>
-                      <div style={{ height: mobile ? 100 : 140, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-                        <CourseThumb title={c.title} image={c.image} size={mobile ? 48 : 64} />
+                      <div style={{ height: mobile ? 100 : 140, background: "#f1f5f9", position: "relative", overflow: "hidden" }}>
+                        <CourseThumb title={c.title} image={c.image} banner />
                         <span style={{ position: "absolute", top: 8, left: 8, fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 99, background: GOLD, color: NAVY, textTransform: "uppercase" }}>{c.category}</span>
                         {isEnrolled && <span style={{ position: "absolute", top: 8, right: 8, fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 99, background: "#10b981", color: "#fff" }}>✓</span>}
                         {!isEnrolled && hasPending && <span style={{ position: "absolute", top: 8, right: 8, fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 99, background: "#f59e0b", color: "#fff" }}>⏳</span>}
