@@ -7,7 +7,7 @@ import { NAVY, GOLD, GOLD2 } from "../../theme";
 // ── Avatar ─────────────────────────────────────────────────────────────
 export const Avatar = ({
   name, size = 34,
-  grad = `#1e40af`,
+  grad = `#0b1f3a`,
 }: { name?: string; size?: number; grad?: string }) => (
   <div style={{
     width: size, height: size, borderRadius: "50%", background: grad,
