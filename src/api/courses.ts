@@ -81,19 +81,18 @@ function parseCourseContent(raw: unknown): CourseContent | undefined {
 function hydrateCourse(c: any): Course {
   return {
     ...c,
-    id:            Number(c.id),
-    price:         Number(c.price   ?? 0),
-    rating:        Number(c.rating  ?? 0),
-    lessons:       Number(c.lessons ?? 0),
-    enrolled:      Number(c.enrolled ?? 0),
-    instructor_id: Number(c.instructor_id ?? 0),
-    // ✅ FIX: Boolean("0") = true — use Number comparison instead
-    is_published:  Number(c.is_published) === 1,
-    sponsored:     Number(c.sponsored) === 1,
-    content:       parseCourseContent(c.content),
+    id:             Number(c.id),
+    price:          Number(c.price    ?? 0),
+    rating:         Number(c.rating   ?? 0),
+    lessons:        Number(c.lessons_count ?? c.lessons ?? 0),
+    enrolled:       Number(c.enrolled_count ?? c.enrolled ?? 0),
+    instructor_id:  Number(c.instructor_id ?? 0),
+    instructor:     c.instructor ?? "",   // ← ADD THIS LINE
+    is_published:   Number(c.is_published) === 1,
+    sponsored:      Number(c.sponsored) === 1,
+    content:        parseCourseContent(c.content),
   };
 }
-
 // ── API calls ─────────────────────────────────────────────────────────
 
 /** List / search courses */
