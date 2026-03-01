@@ -31,10 +31,7 @@ import StudentDashboard    from "./pages/dashboard/StudentDashboard";
 import InstructorDashboard from "./pages/dashboard/InstructorDashboard";
 import AdminDashboard      from "./pages/dashboard/AdminDashboard";
 
-// Pages — student sub-pages
-import Certificates    from "./pages/dashboard/Certificates";
-import Profile         from "./pages/dashboard/Profile";
-import StudentSettings from "./pages/dashboard/StudentSettings";
+
 
 // ── Only show chat on public pages ────────────────────────────────
 function ChatWrapper() {
