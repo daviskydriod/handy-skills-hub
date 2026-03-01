@@ -5,23 +5,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import DashboardLayout from "./components/layout/DashboardLayout";
-import HandyGidiChat from './components/global/HandyGidiChat';
+import HandyGidiChat from "./components/global/HandyGidiChat";
 
 // Pages — public
-import Index        from "./pages/Index";
-import Courses      from "./pages/Courses";
-import CourseDetail from "./pages/CourseDetail";
-import About        from "./pages/About";
-import Blog         from "./pages/Blog";
-import Contact      from "./pages/Contact";
-import Login        from "./pages/Login";
-import Register     from "./pages/Register";
-import NotFound     from "./pages/NotFound";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import AdminRegister from "./pages/AdminRegister";
-import AdminLogin    from "./pages/AdminLogin";
+import Index           from "./pages/Index";
+import Courses         from "./pages/Courses";
+import CourseDetail    from "./pages/CourseDetail";
+import About           from "./pages/About";
+import Blog            from "./pages/Blog";
+import Contact         from "./pages/Contact";
+import Login           from "./pages/Login";
+import Register        from "./pages/Register";
+import NotFound        from "./pages/NotFound";
+import ForgotPassword  from "./pages/ForgotPassword";
+import ResetPassword   from "./pages/ResetPassword";
+import AdminRegister   from "./pages/AdminRegister";
+import AdminLogin      from "./pages/AdminLogin";
 
 // Pages — course player
 import StudentCoursePlayer from "./pages/StudentCoursePlayer";
@@ -31,14 +30,13 @@ import StudentDashboard    from "./pages/dashboard/StudentDashboard";
 import InstructorDashboard from "./pages/dashboard/InstructorDashboard";
 import AdminDashboard      from "./pages/dashboard/AdminDashboard";
 
-
-
-// ── Only show chat on public pages ────────────────────────────────
+// ── Only show chat on public pages ────────────────────────────────────
 function ChatWrapper() {
   const location = useLocation();
-  const hide = location.pathname.startsWith("/dashboard") ||
-               location.pathname.startsWith("/learn")     ||
-               location.pathname.startsWith("/admin");
+  const hide =
+    location.pathname.startsWith("/dashboard") ||
+    location.pathname.startsWith("/learn")     ||
+    location.pathname.startsWith("/admin");
   return hide ? null : <HandyGidiChat />;
 }
 
@@ -54,7 +52,7 @@ const App = () => (
           <ChatWrapper />
           <Routes>
 
-            {/* ── Public ─────────────────────────────────────────── */}
+            {/* ── Public ──────────────────────────────────────────── */}
             <Route path="/"            element={<Index />} />
             <Route path="/courses"     element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
@@ -65,15 +63,15 @@ const App = () => (
             <Route path="/register"    element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password"  element={<ResetPassword />} />
-            <Route path="/admin/register" element={<AdminRegister />} />
-            <Route path="/admin/login"    element={<AdminLogin />} />
+            <Route path="/admin/register"  element={<AdminRegister />} />
+            <Route path="/admin/login"     element={<AdminLogin />} />
 
-            {/* ── Course Player ─────────────────────────────────── */}
+            {/* ── Course Player ────────────────────────────────────── */}
             <Route path="/learn/:id" element={
               <ProtectedRoute><StudentCoursePlayer /></ProtectedRoute>
             } />
 
-            {/* ── Student ───────────────────────────────────────── */}
+            {/* ── Student ──────────────────────────────────────────── */}
             <Route path="/dashboard/student" element={
               <ProtectedRoute><StudentDashboard /></ProtectedRoute>
             } />
@@ -87,23 +85,23 @@ const App = () => (
               <ProtectedRoute><StudentDashboard defaultTab="payments" /></ProtectedRoute>
             } />
             <Route path="/dashboard/certificates" element={
-              <ProtectedRoute><DashboardLayout><Certificates /></DashboardLayout></ProtectedRoute>
+              <ProtectedRoute><StudentDashboard defaultTab="certificates" /></ProtectedRoute>
             } />
             <Route path="/dashboard/profile" element={
-              <ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>
+              <ProtectedRoute><StudentDashboard defaultTab="profile" /></ProtectedRoute>
             } />
             <Route path="/dashboard/settings" element={
-              <ProtectedRoute><DashboardLayout><StudentSettings /></DashboardLayout></ProtectedRoute>
+              <ProtectedRoute><StudentDashboard defaultTab="settings" /></ProtectedRoute>
             } />
 
-            {/* ── Instructor ────────────────────────────────────── */}
+            {/* ── Instructor ───────────────────────────────────────── */}
             <Route path="/dashboard/instructor" element={
               <ProtectedRoute><InstructorDashboard /></ProtectedRoute>
             } />
 
-            {/* ── Admin ─────────────────────────────────────────── */}
+            {/* ── Admin ────────────────────────────────────────────── */}
             <Route path="/dashboard/admin" element={
-              <ProtectedRoute><DashboardLayout><AdminDashboard /></DashboardLayout></ProtectedRoute>
+              <ProtectedRoute><AdminDashboard /></ProtectedRoute>
             } />
 
             {/* 404 */}
