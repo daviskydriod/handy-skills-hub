@@ -37,6 +37,7 @@ const courses = [
 const navLinks = [
   { label: "Home",    to: "/" },
   { label: "About",   to: "/about" },
+  { label: "Gallery", to: "/gallery" },
   { label: "Contact", to: "/contact" },
 ];
 
