@@ -3,7 +3,7 @@ import { Target, Eye, CheckCircle, MapPin, Users, BookOpen, Trophy, Star, Sparkl
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { BUSINESS_INFO } from "@/data/mockData";
-import about1 from "@/assets/about1.jpg";
+import about2 from "@/assets/about2.jpg";
 
 
 /* ─── tokens ─────────────────────────────────────────────── */
