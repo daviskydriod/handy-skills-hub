@@ -44,6 +44,12 @@ const GOLD  = "#EAB308";
 const GOLD2 = "#CA8A04";
 
 /* ─── Hero slides ───────────────────────────────────────────── */
+import heroImg1 from "@/assets/image1.jpg";
+import heroImg2 from "@/assets/image2.jpg";
+import heroImg3 from "@/assets/image3.jpg";
+import heroImg4 from "@/assets/image4.jpg";
+import heroImg5 from "@/assets/image5.jpg";
+
 const SLIDES = [
   {
     image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=1400&q=80&fit=crop",
@@ -52,6 +58,7 @@ const SLIDES = [
     sub: "Abuja's most hands-on digital & business skills academy. You are exactly where your future begins.",
     cta: "Start Learning Today",
     ctaTo: "/register",
+    flyer: false,
   },
   {
     image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1400&q=80&fit=crop",
@@ -60,6 +67,7 @@ const SLIDES = [
     sub: "From graphic design to AI, web development to business strategy — practical skills that pay.",
     cta: "Browse All Courses",
     ctaTo: "/courses",
+    flyer: false,
   },
   {
     image: "https://images.unsplash.com/photo-1529390079861-591de354faf5?w=1400&q=80&fit=crop",
@@ -68,7 +76,13 @@ const SLIDES = [
     sub: "Join a growing family of digital professionals trained right here in Abuja. Your turn is now.",
     cta: "Register Free",
     ctaTo: "/register",
+    flyer: false,
   },
+  { image: heroImg1, cta: "Start Learning Today", ctaTo: "/register", flyer: true },
+  { image: heroImg2, cta: "Browse All Courses",   ctaTo: "/courses",  flyer: true },
+  { image: heroImg3, cta: "Register Free",        ctaTo: "/register", flyer: true },
+  { image: heroImg4, cta: "Enroll Now",           ctaTo: "/register", flyer: true },
+  { image: heroImg5, cta: "View Courses",         ctaTo: "/courses",  flyer: true },
 ];
 
 /* ─── animation presets ─────────────────────────────────────── */
@@ -255,18 +269,28 @@ export default function Index() {
       ══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden bg-[#060d1c]" style={{ minHeight: "92vh" }}>
 
-        {/* Slide image */}
+        {/* Background layer — blurred for flyers, cover for regular */}
         <AnimatePresence mode="sync">
-          <motion.div key={slide}
+          <motion.div key={`bg-${slide}`}
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0">
-            <img src={current.image} alt="" className="w-full h-full object-cover" />
+            <img
+              src={current.image} alt=""
+              className="w-full h-full"
+              style={current.flyer
+                ? { objectFit: "cover", filter: "blur(28px) brightness(0.22) saturate(1.3)", transform: "scale(1.08)" }
+                : { objectFit: "cover" }
+              }
+            />
+            {/* overlay — lighter for flyers so bg stays very dark */}
             <div className="absolute inset-0"
-              style={{ background: "linear-gradient(105deg,rgba(6,13,28,0.92) 0%,rgba(6,13,28,0.6) 55%,rgba(6,13,28,0.18) 100%)" }} />
-            {/* subtle grid overlay */}
+              style={{ background: current.flyer
+                ? "rgba(6,13,28,0.45)"
+                : "linear-gradient(105deg,rgba(6,13,28,0.92) 0%,rgba(6,13,28,0.6) 55%,rgba(6,13,28,0.18) 100%)"
+              }} />
             <div className="absolute inset-0 opacity-[0.03]"
               style={{ backgroundImage: `linear-gradient(rgba(234,179,8,1) 1px,transparent 1px),linear-gradient(90deg,rgba(234,179,8,1) 1px,transparent 1px)`, backgroundSize: "60px 60px" }} />
           </motion.div>
@@ -276,46 +300,34 @@ export default function Index() {
         <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] opacity-[0.07] -translate-y-1/4 translate-x-1/4"
           style={{ background: `radial-gradient(circle,${GOLD},transparent 70%)` }} />
 
-        {/* Content */}
-        <div className="relative z-10 container flex flex-col lg:flex-row items-center min-h-[92vh] py-20 gap-12">
-
-          {/* Left: text */}
-          <div className="flex-1 max-w-2xl">
+        {/* ── FLYER SLIDE: centred image + CTA below ── */}
+        {current.flyer && (
+          <div className="relative z-10 flex flex-col items-center justify-center min-h-[92vh] py-10 px-4 gap-6">
             <AnimatePresence mode="wait">
-              <motion.span key={`ey-${slide}`}
-                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.4 }}
-                className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest px-4 py-1.5 rounded-full mb-5 w-fit"
-                style={{ background: "rgba(234,179,8,0.15)", border: "1px solid rgba(234,179,8,0.35)", color: GOLD }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse inline-block" />
-                {current.eyebrow}
-              </motion.span>
+              <motion.img
+                key={`flyer-${slide}`}
+                src={current.image}
+                alt="HandyGidi Training Centre"
+                initial={{ opacity: 0, scale: 0.96, y: 16 }}
+                animate={{ opacity: 1, scale: 1,    y: 0  }}
+                exit={{    opacity: 0, scale: 0.98,  y: -8 }}
+                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-2xl"
+                style={{
+                  maxHeight: "72vh",
+                  maxWidth: "min(100%, 640px)",
+                  width: "auto",
+                  objectFit: "contain",
+                  boxShadow: "0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(234,179,8,0.18)",
+                }}
+              />
             </AnimatePresence>
 
             <AnimatePresence mode="wait">
-              <motion.h1 key={`h-${slide}`}
-                initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="font-heading font-extrabold text-white leading-[1.05] mb-5 whitespace-pre-line"
-                style={{ fontSize: "clamp(2.4rem,5.5vw,4.2rem)" }}>
-                {current.heading}
-              </motion.h1>
-            </AnimatePresence>
-
-            <AnimatePresence mode="wait">
-              <motion.p key={`sub-${slide}`}
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.45, delay: 0.1 }}
-                className="text-slate-300 text-base md:text-lg leading-relaxed mb-8 max-w-lg">
-                {current.sub}
-              </motion.p>
-            </AnimatePresence>
-
-            <AnimatePresence mode="wait">
-              <motion.div key={`cta-${slide}`}
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, delay: 0.18 }}
-                className="flex flex-wrap gap-3">
+              <motion.div key={`fcta-${slide}`}
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, delay: 0.25 }}
+                className="flex flex-wrap items-center justify-center gap-3">
                 <Link to={current.ctaTo}
                   className="inline-flex items-center gap-2 font-extrabold px-8 py-3.5 rounded-full text-sm transition-all hover:scale-105 active:scale-95"
                   style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c", boxShadow: "0 8px 32px rgba(234,179,8,0.4)" }}>
@@ -329,8 +341,8 @@ export default function Index() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Slide dots */}
-            <div className="flex items-center gap-2 mt-10">
+            {/* Dots */}
+            <div className="flex items-center gap-2">
               {SLIDES.map((_, i) => (
                 <button key={i} onClick={() => setSlide(i)}
                   className="transition-all duration-300 rounded-full"
@@ -338,32 +350,98 @@ export default function Index() {
               ))}
             </div>
           </div>
+        )}
 
-          {/* Right: floating stat cards — hidden on mobile */}
-          <div className="hidden lg:flex flex-col gap-4 shrink-0">
-            {[
-              { icon: Users,    value: "500+",  label: "Graduates" },
-              { icon: BookOpen, value: "14+",   label: "Programs" },
-              { icon: Trophy,   value: "95%",   label: "Satisfaction" },
-              { icon: MapPin,   value: "Lugbe", label: "Abuja" },
-            ].map((s, i) => (
-              <motion.div key={s.label}
-                initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
-                className="flex items-center gap-3 px-5 py-3.5 rounded-2xl"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", backdropFilter: "blur(12px)" }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})` }}>
-                  <s.icon size={15} className="text-white" />
-                </div>
-                <div>
-                  <p className="font-heading font-extrabold text-white text-sm leading-none">{s.value}</p>
-                  <p className="text-slate-400 text-[11px] mt-0.5">{s.label}</p>
-                </div>
-              </motion.div>
-            ))}
+        {/* ── REGULAR SLIDE: full text overlay layout ── */}
+        {!current.flyer && (
+          <div className="relative z-10 container flex flex-col lg:flex-row items-center min-h-[92vh] py-20 gap-12">
+
+            {/* Left: text */}
+            <div className="flex-1 max-w-2xl">
+              <AnimatePresence mode="wait">
+                <motion.span key={`ey-${slide}`}
+                  initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.4 }}
+                  className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest px-4 py-1.5 rounded-full mb-5 w-fit"
+                  style={{ background: "rgba(234,179,8,0.15)", border: "1px solid rgba(234,179,8,0.35)", color: GOLD }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse inline-block" />
+                  {current.eyebrow}
+                </motion.span>
+              </AnimatePresence>
+
+              <AnimatePresence mode="wait">
+                <motion.h1 key={`h-${slide}`}
+                  initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  className="font-heading font-extrabold text-white leading-[1.05] mb-5 whitespace-pre-line"
+                  style={{ fontSize: "clamp(2.4rem,5.5vw,4.2rem)" }}>
+                  {current.heading}
+                </motion.h1>
+              </AnimatePresence>
+
+              <AnimatePresence mode="wait">
+                <motion.p key={`sub-${slide}`}
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  transition={{ duration: 0.45, delay: 0.1 }}
+                  className="text-slate-300 text-base md:text-lg leading-relaxed mb-8 max-w-lg">
+                  {current.sub}
+                </motion.p>
+              </AnimatePresence>
+
+              <AnimatePresence mode="wait">
+                <motion.div key={`cta-${slide}`}
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4, delay: 0.18 }}
+                  className="flex flex-wrap gap-3">
+                  <Link to={current.ctaTo}
+                    className="inline-flex items-center gap-2 font-extrabold px-8 py-3.5 rounded-full text-sm transition-all hover:scale-105 active:scale-95"
+                    style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, color: "#060d1c", boxShadow: "0 8px 32px rgba(234,179,8,0.4)" }}>
+                    <Zap size={15} /> {current.cta}
+                  </Link>
+                  <a href={whatsappEnroll} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 font-semibold px-8 py-3.5 rounded-full text-sm border text-white hover:bg-white/10 transition-all"
+                    style={{ borderColor: "rgba(255,255,255,0.25)" }}>
+                    <MessageCircle size={14} /> WhatsApp Us
+                  </a>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Slide dots */}
+              <div className="flex items-center gap-2 mt-10">
+                {SLIDES.map((_, i) => (
+                  <button key={i} onClick={() => setSlide(i)}
+                    className="transition-all duration-300 rounded-full"
+                    style={{ width: i === slide ? 28 : 8, height: 8, background: i === slide ? GOLD : "rgba(255,255,255,0.3)" }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Right: floating stat cards */}
+            <div className="hidden lg:flex flex-col gap-4 shrink-0">
+              {[
+                { icon: Users,    value: "500+",  label: "Graduates" },
+                { icon: BookOpen, value: "14+",   label: "Programs" },
+                { icon: Trophy,   value: "95%",   label: "Satisfaction" },
+                { icon: MapPin,   value: "Lugbe", label: "Abuja" },
+              ].map((s, i) => (
+                <motion.div key={s.label}
+                  initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
+                  className="flex items-center gap-3 px-5 py-3.5 rounded-2xl"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", backdropFilter: "blur(12px)" }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})` }}>
+                    <s.icon size={15} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="font-heading font-extrabold text-white text-sm leading-none">{s.value}</p>
+                    <p className="text-slate-400 text-[11px] mt-0.5">{s.label}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Progress bar */}
         <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/10">
