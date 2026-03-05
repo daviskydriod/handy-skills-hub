@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { BUSINESS_INFO } from "@/data/mockData";
 import about1 from "@/assets/about1.jpg";
-import about2 from "@/assets/about2.jpg";
+
 
 /* ─── tokens ─────────────────────────────────────────────── */
 const NAVY  = "#0b1f3a";
@@ -371,25 +371,7 @@ export default function About() {
                     style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})` }} />
                 </div>
 
-                {/* secondary photo — offset up */}
-                <div className="relative shrink-0"
-                  style={{
-                    marginBottom: "1.5rem",
-                    filter: "drop-shadow(0 15px 30px rgba(0,0,0,0.5))",
-                  }}>
-                  <div className="rounded-2xl overflow-hidden border"
-                    style={{
-                      borderColor: "rgba(234,179,8,0.25)",
-                      width: "clamp(90px,20vw,152px)",
-                      height: "clamp(115px,26vw,200px)",
-                    }}>
-                    <img
-                      src={about2}
-                      alt="Daina Ehanah"
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                </div>
+                
               </div>
 
               {/* text */}
