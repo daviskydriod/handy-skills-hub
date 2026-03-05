@@ -98,7 +98,7 @@ export default function Navbar() {
             className="w-10 h-10 rounded-xl object-contain"
             style={{ border: `2px solid rgba(234,179,8,0.3)` }}
           />
-          <div className="hidden sm:block">
+          <div>
             <span className="font-heading font-extrabold text-lg leading-tight block" style={{ color: "#fff" }}>
               HandyGidi
             </span>
