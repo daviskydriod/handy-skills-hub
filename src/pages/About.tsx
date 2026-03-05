@@ -358,11 +358,10 @@ export default function About() {
                   <div className="rounded-2xl overflow-hidden border-2"
                     style={{
                       borderColor: "rgba(234,179,8,0.4)",
-                      width: "clamp(120px,28vw,200px)",
-                      height: "clamp(150px,35vw,256px)",
+      
                     }}>
                     <img
-                      src={about1}
+                      src={about2}
                       alt="Daina Ehanah – Executive Director"
                       className="w-full h-full object-cover object-top"
                     />
