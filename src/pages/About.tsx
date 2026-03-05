@@ -361,12 +361,10 @@ export default function About() {
       
                     }}>
                     <img
-                      src={about2}
-                      alt="Daina Ehanah – Executive Director"
-                      width="500px"
-                      height="600px"
-                      className="w-full h-full object-cover object-top"
-                    />
+  src={about2}
+  alt="Daina Ehanah – Executive Director"
+  className="w-[clamp(260px,40vw,500px)] h-[clamp(320px,50vw,600px)] object-cover object-top rounded-xl"
+/>
                   </div>
                   <div className="absolute -bottom-2 -left-2 w-7 h-7 rounded-lg"
                     style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})` }} />
