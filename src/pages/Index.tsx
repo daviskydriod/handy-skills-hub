@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -163,7 +163,6 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => (
     </div>
   </motion.div>
 );
-
 
 /* ════════════════════════════════════════════════════════════
    TESTIMONIAL CARD
@@ -538,9 +537,6 @@ export default function Index() {
       </section>
 
 
-
-      
-
       {/* ══════════════════════════════════════════════════════
           GALLERY — past activities preview
       ══════════════════════════════════════════════════════ */}
@@ -554,7 +550,7 @@ export default function Index() {
             </h2>
           </div>
 
-          {/* Videos row — show first 4 */}
+          {/* Videos — natural size, 2 cols mobile / 4 cols desktop */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             {galleryVideos.slice(0, 4).map((item, i) => (
               <motion.div
@@ -562,11 +558,11 @@ export default function Index() {
                 variants={fadeUp} custom={i}
                 initial="hidden" whileInView="visible" viewport={{ once: true }}
                 className="group relative rounded-2xl overflow-hidden cursor-pointer"
-                style={{ aspectRatio: "9/10", background: "#0b1f3a" }}
+                style={{ background: "#0b1f3a" }}
                 onClick={() => setActiveVideo(item.id)}
               >
-                <video src={item.src} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" muted preload="metadata" />
-                <div className="absolute inset-0" style={{ background: "rgba(6,13,28,0.3)" }} />
+                <video src={item.src} className="w-full block transition-transform duration-500 group-hover:scale-105" muted preload="metadata" />
+                <div className="absolute inset-0" style={{ background: "rgba(6,13,28,0.28)" }} />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                     style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, boxShadow: `0 6px 24px rgba(234,179,8,0.5)` }}>
@@ -578,18 +574,22 @@ export default function Index() {
             ))}
           </div>
 
-          {/* Images row — show first 4 */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+          {/* Images — CSS columns masonry, natural heights */}
+          <style>{`
+            .idx-photo-masonry { column-count: 2; column-gap: 12px; }
+            @media (min-width: 640px) { .idx-photo-masonry { column-count: 4; } }
+          `}</style>
+          <div className="idx-photo-masonry mb-10">
             {galleryImages.slice(0, 4).map((item, i) => (
               <motion.div
                 key={item.id}
                 variants={fadeUp} custom={i}
                 initial="hidden" whileInView="visible" viewport={{ once: true }}
                 className="group relative rounded-2xl overflow-hidden cursor-pointer"
-                style={{ aspectRatio: "9/10" }}
+                style={{ breakInside: "avoid", marginBottom: "12px", display: "block" }}
                 onClick={() => setActiveVideo(item.id)}
               >
-                <img src={item.src} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <img src={item.src} alt="" className="w-full block transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-yellow-400 transition-all duration-300 pointer-events-none" />
               </motion.div>
             ))}
@@ -618,9 +618,9 @@ export default function Index() {
             onClick={e => e.stopPropagation()}
           >
             {activeItem.type === "video" ? (
-              <video key={activeItem.src} src={activeItem.src} className="w-full" style={{ aspectRatio: "16/9" }} controls autoPlay />
+              <video key={activeItem.src} src={activeItem.src} className="w-full block" controls autoPlay />
             ) : (
-              <img src={activeItem.src} alt="" className="w-full" style={{ aspectRatio: "16/9", objectFit: "cover" }} />
+              <img src={activeItem.src} alt="" className="w-full block" style={{ maxHeight: "85vh", objectFit: "contain" }} />
             )}
             <button onClick={closeVideo}
               className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110"
@@ -640,7 +640,6 @@ export default function Index() {
           </div>
         </div>
       )}
-  
 
 
       {/* ══════════════════════════════════════════════════════
@@ -837,6 +836,7 @@ export default function Index() {
 
 
 
+
       {/* ══════════════════════════════════════════════════════
           INTERN BANNER
       ══════════════════════════════════════════════════════ */}
@@ -910,4 +910,4 @@ export default function Index() {
 
     </MainLayout>
   );
-}
+} 
