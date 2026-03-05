@@ -363,6 +363,8 @@ export default function About() {
                     <img
                       src={about2}
                       alt="Daina Ehanah – Executive Director"
+                      width="500px"
+                      height="600px"
                       className="w-full h-full object-cover object-top"
                     />
                   </div>
