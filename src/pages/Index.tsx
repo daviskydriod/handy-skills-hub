@@ -165,107 +165,6 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => (
 );
 
 
-      {/* ══════════════════════════════════════════════════════
-          GALLERY — past activities preview
-      ══════════════════════════════════════════════════════ */}
-      <section className="py-20 md:py-28 bg-white">
-        <div className="container max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <SectionLabel>Past Activities</SectionLabel>
-            <h2 className="font-heading font-extrabold"
-              style={{ fontSize: "clamp(1.7rem,4vw,2.6rem)", color: NAVY }}>
-              Life at <span style={{ color: GOLD }}>HandyGidi</span>
-            </h2>
-          </div>
-
-          {/* Videos row — show first 4 */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-            {galleryVideos.slice(0, 4).map((item, i) => (
-              <motion.div
-                key={item.id}
-                variants={fadeUp} custom={i}
-                initial="hidden" whileInView="visible" viewport={{ once: true }}
-                className="group relative rounded-2xl overflow-hidden cursor-pointer"
-                style={{ aspectRatio: "9/10", background: "#0b1f3a" }}
-                onClick={() => setActiveVideo(item.id)}
-              >
-                <video src={item.src} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" muted preload="metadata" />
-                <div className="absolute inset-0" style={{ background: "rgba(6,13,28,0.3)" }} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
-                    style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, boxShadow: `0 6px 24px rgba(234,179,8,0.5)` }}>
-                    <Play size={18} className="text-white" style={{ marginLeft: 2 }} />
-                  </div>
-                </div>
-                <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-yellow-400 transition-all duration-300 pointer-events-none" />
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Images row — show first 4 */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
-            {galleryImages.slice(0, 4).map((item, i) => (
-              <motion.div
-                key={item.id}
-                variants={fadeUp} custom={i}
-                initial="hidden" whileInView="visible" viewport={{ once: true }}
-                className="group relative rounded-2xl overflow-hidden cursor-pointer"
-                style={{ aspectRatio: "9/10" }}
-                onClick={() => setActiveVideo(item.id)}
-              >
-                <img src={item.src} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-yellow-400 transition-all duration-300 pointer-events-none" />
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <Link to="/gallery"
-              className="inline-flex items-center gap-2 font-extrabold px-8 py-3 rounded-full border-2 transition-all hover:scale-105"
-              style={{ borderColor: GOLD, color: GOLD2 }}>
-              View Full Gallery <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Lightbox modal */}
-      {activeItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(6,13,28,0.97)", backdropFilter: "blur(16px)" }}
-          onClick={closeVideo}
-        >
-          <div
-            className="relative w-full max-w-4xl rounded-2xl overflow-hidden"
-            style={{ background: "#0b1f3a", border: "1px solid rgba(234,179,8,0.2)" }}
-            onClick={e => e.stopPropagation()}
-          >
-            {activeItem.type === "video" ? (
-              <video key={activeItem.src} src={activeItem.src} className="w-full" style={{ aspectRatio: "16/9" }} controls autoPlay />
-            ) : (
-              <img src={activeItem.src} alt="" className="w-full" style={{ aspectRatio: "16/9", objectFit: "cover" }} />
-            )}
-            <button onClick={closeVideo}
-              className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110"
-              style={{ background: "rgba(6,13,28,0.85)", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <X size={16} className="text-white" />
-            </button>
-            <button onClick={prevVideo}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
-              style={{ background: "rgba(6,13,28,0.85)", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <ChevronLeft size={18} className="text-white" />
-            </button>
-            <button onClick={nextVideo}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
-              style={{ background: "rgba(6,13,28,0.85)", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <ChevronRight size={18} className="text-white" />
-            </button>
-          </div>
-        </div>
-      )}
-  
-
 /* ════════════════════════════════════════════════════════════
    TESTIMONIAL CARD
 ════════════════════════════════════════════════════════════ */
@@ -637,6 +536,111 @@ export default function Index() {
           )}
         </div>
       </section>
+
+
+
+      
+
+      {/* ══════════════════════════════════════════════════════
+          GALLERY — past activities preview
+      ══════════════════════════════════════════════════════ */}
+      <section className="py-20 md:py-28 bg-white">
+        <div className="container max-w-6xl mx-auto">
+          <div className="text-center mb-14">
+            <SectionLabel>Past Activities</SectionLabel>
+            <h2 className="font-heading font-extrabold"
+              style={{ fontSize: "clamp(1.7rem,4vw,2.6rem)", color: NAVY }}>
+              Life at <span style={{ color: GOLD }}>HandyGidi</span>
+            </h2>
+          </div>
+
+          {/* Videos row — show first 4 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            {galleryVideos.slice(0, 4).map((item, i) => (
+              <motion.div
+                key={item.id}
+                variants={fadeUp} custom={i}
+                initial="hidden" whileInView="visible" viewport={{ once: true }}
+                className="group relative rounded-2xl overflow-hidden cursor-pointer"
+                style={{ aspectRatio: "9/10", background: "#0b1f3a" }}
+                onClick={() => setActiveVideo(item.id)}
+              >
+                <video src={item.src} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" muted preload="metadata" />
+                <div className="absolute inset-0" style={{ background: "rgba(6,13,28,0.3)" }} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+                    style={{ background: `linear-gradient(135deg,${GOLD},${GOLD2})`, boxShadow: `0 6px 24px rgba(234,179,8,0.5)` }}>
+                    <Play size={18} className="text-white" style={{ marginLeft: 2 }} />
+                  </div>
+                </div>
+                <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-yellow-400 transition-all duration-300 pointer-events-none" />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Images row — show first 4 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+            {galleryImages.slice(0, 4).map((item, i) => (
+              <motion.div
+                key={item.id}
+                variants={fadeUp} custom={i}
+                initial="hidden" whileInView="visible" viewport={{ once: true }}
+                className="group relative rounded-2xl overflow-hidden cursor-pointer"
+                style={{ aspectRatio: "9/10" }}
+                onClick={() => setActiveVideo(item.id)}
+              >
+                <img src={item.src} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-yellow-400 transition-all duration-300 pointer-events-none" />
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Link to="/gallery"
+              className="inline-flex items-center gap-2 font-extrabold px-8 py-3 rounded-full border-2 transition-all hover:scale-105"
+              style={{ borderColor: GOLD, color: GOLD2 }}>
+              View Full Gallery <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Lightbox modal */}
+      {activeItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(6,13,28,0.97)", backdropFilter: "blur(16px)" }}
+          onClick={closeVideo}
+        >
+          <div
+            className="relative w-full max-w-4xl rounded-2xl overflow-hidden"
+            style={{ background: "#0b1f3a", border: "1px solid rgba(234,179,8,0.2)" }}
+            onClick={e => e.stopPropagation()}
+          >
+            {activeItem.type === "video" ? (
+              <video key={activeItem.src} src={activeItem.src} className="w-full" style={{ aspectRatio: "16/9" }} controls autoPlay />
+            ) : (
+              <img src={activeItem.src} alt="" className="w-full" style={{ aspectRatio: "16/9", objectFit: "cover" }} />
+            )}
+            <button onClick={closeVideo}
+              className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: "rgba(6,13,28,0.85)", border: "1px solid rgba(255,255,255,0.15)" }}>
+              <X size={16} className="text-white" />
+            </button>
+            <button onClick={prevVideo}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: "rgba(6,13,28,0.85)", border: "1px solid rgba(255,255,255,0.15)" }}>
+              <ChevronLeft size={18} className="text-white" />
+            </button>
+            <button onClick={nextVideo}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: "rgba(6,13,28,0.85)", border: "1px solid rgba(255,255,255,0.15)" }}>
+              <ChevronRight size={18} className="text-white" />
+            </button>
+          </div>
+        </div>
+      )}
+  
 
 
       {/* ══════════════════════════════════════════════════════
