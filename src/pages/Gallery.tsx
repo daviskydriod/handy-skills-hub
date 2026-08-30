@@ -14,6 +14,11 @@ import image2 from "@/assets/image2.jpg";
 import image3 from "@/assets/image3.jpg";
 import image4 from "@/assets/image4.jpg";
 import image5 from "@/assets/image5.jpg";
+import image6 from "@/assets/image6.jpg";
+import image7 from "@/assets/image7.jpg";
+import image8 from "@/assets/image8.jpg";
+import image9 from "@/assets/image9.jpg";
+import image10 from "@/assets/image10.jpg";
 
 /* ─── tokens ─────────────────────────────────────────────── */
 const NAVY  = "#0b1f3a";
@@ -37,6 +42,12 @@ const allMedia: MediaItem[] = [
   { id: 10, type: "video", src: gallery7 },
   { id: 11, type: "image", src: image4   },
   { id: 12, type: "image", src: image5   },
+  { id: 13, type: "image", src: image6   },
+  { id: 14, type: "image", src: image7   },
+  { id: 15, type: "image", src: image8   },
+  { id: 16, type: "image", src: image9   },
+  { id: 17, type: "image", src: image10   },
+
 ];
 
 const videos = allMedia.filter(m => m.type === "video");
