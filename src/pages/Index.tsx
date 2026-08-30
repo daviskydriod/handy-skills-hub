@@ -30,6 +30,11 @@ import image2 from "@/assets/image2.jpg";
 import image3 from "@/assets/image3.jpg";
 import image4 from "@/assets/image4.jpg";
 import image5 from "@/assets/image5.jpg";
+import image6 from "@/assets/image6.jpg";
+import image7 from "@/assets/image7.jpg";
+import image8 from "@/assets/image8.jpg";
+import image9 from "@/assets/image9.jpg";
+import image10 from "@/assets/image10.jpg";
 
 /* ─── icon map ─────────────────────────────────────────────── */
 const iconMap: Record<string, any> = {
@@ -226,6 +231,12 @@ const galleryImages = [
   { id: 10, src: image3 },
   { id: 11, src: image4 },
   { id: 12, src: image5 },
+  { id: 13, src: image6 },
+  { id: 14, src: image7 },
+  { id: 15, src: image8 },
+  { id: 16, src: image9 },
+  { id: 17, src: image10 },
+
 ];
 
 /* ════════════════════════════════════════════════════════════
