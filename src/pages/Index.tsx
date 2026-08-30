@@ -54,6 +54,12 @@ import heroImg2 from "@/assets/image2.jpg";
 import heroImg3 from "@/assets/image3.jpg";
 import heroImg4 from "@/assets/image4.jpg";
 import heroImg5 from "@/assets/image5.jpg";
+import heroImg6 from "@/assets/image6.jpg";
+import heroImg7 from "@/assets/image7.jpg";
+import heroImg8 from "@/assets/image8.jpg";
+import heroImg9 from "@/assets/image9.jpg";
+import heroImg10 from "@/assets/image10.jpg";
+
 
 const SLIDES = [
   {
@@ -88,6 +94,11 @@ const SLIDES = [
   { image: heroImg3, cta: "Register Free",        ctaTo: "/register", flyer: true },
   { image: heroImg4, cta: "Enroll Now",           ctaTo: "/register", flyer: true },
   { image: heroImg5, cta: "View Courses",         ctaTo: "/courses",  flyer: true },
+  { image: heroImg6, cta: "Start Learning Today", ctaTo: "/register", flyer: true },
+  { image: heroImg7, cta: "Browse All Courses",   ctaTo: "/courses",  flyer: true },
+  { image: heroImg8, cta: "Register Free",        ctaTo: "/register", flyer: true },
+  { image: heroImg9, cta: "Enroll Now",           ctaTo: "/register", flyer: true },
+  { image: heroImg10, cta: "View Courses",         ctaTo: "/courses",  flyer: true },
 ];
 
 /* ─── animation presets ─────────────────────────────────────── */
